@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send } from "lucide-react";
+import { Send, Zap } from "lucide-react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -34,23 +34,28 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Ask about the videos..."
-        rows={1}
-        className="flex-1 px-3 py-2 border rounded-md bg-background resize-none min-h-[40px] max-h-[120px]"
-        disabled={disabled}
-      />
+    <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+      <div className="flex-1 relative rounded-xl border border-zinc-200 bg-zinc-50 focus-within:bg-white focus-within:border-blue-500/50 focus-within:shadow-[0_4px_20px_rgba(59,130,246,0.04)] transition-all duration-300">
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Query comparative insights..."
+          rows={1}
+          className="w-full px-4 py-3 bg-transparent text-zinc-800 placeholder-zinc-400 resize-none min-h-[44px] max-h-[120px] focus:outline-none text-sm leading-relaxed"
+          disabled={disabled}
+        />
+        <div className="absolute right-3 bottom-3 text-zinc-400">
+          <Zap size={12} className={disabled ? "text-zinc-300" : "text-blue-600 animate-pulse"} />
+        </div>
+      </div>
       <button
         type="submit"
         disabled={disabled || !value.trim()}
-        className="px-3 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50"
+        className="h-[44px] w-[44px] flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-md hover:opacity-95 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:shadow-none transition-all duration-200 flex-shrink-0"
       >
-        <Send size={18} />
+        <Send size={16} />
       </button>
     </form>
   );
