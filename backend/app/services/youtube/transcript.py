@@ -9,7 +9,7 @@ def is_youtube_url(url: str) -> bool:
 
 
 def is_instagram_url(url: str) -> bool:
-    return bool(re.match(r'(https?://)?(www\.)?instagram\.com/reel/', url))
+    return bool(re.match(r'(https?://)?(www\.)?instagram\.com/(p|reel|tv)/', url))
 
 
 def extract_video_id(url: str) -> Optional[str]:

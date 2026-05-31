@@ -1,11 +1,13 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from pathlib import Path
 
 
 class Settings(BaseSettings):
     llm_provider: str = "gemini"
     gemini_api_key: str = ""
     aicredit_api_key: str = ""
+    brightdata_api_key: str = ""
     llm_model: str = "gemini-3-flash-preview"
     embedding_model: str = "text-embedding-004"
     chroma_db_path: str = "./chroma_db"
@@ -14,7 +16,7 @@ class Settings(BaseSettings):
     top_k: int = 5
 
     class Config:
-        env_file = ".env"
+        env_file = str(Path(__file__).resolve().parent.parent / ".env")
 
     @property
     def active_api_key(self) -> str:

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
 from app.models import VideoIngestRequest, VideoIngestResponse, VideoData, ChatRequest
-from app.services.transcript import get_transcript, is_youtube_url
+from app.services.youtube.transcript import get_transcript, is_youtube_url
 from app.services.metadata import get_video_metadata
 from app.services.engagement import calculate_engagement_rate
 from app.services.embedding import chunk_transcript, store_chunks_in_chroma
