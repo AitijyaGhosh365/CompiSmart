@@ -11,6 +11,7 @@ export interface VideoData {
   upload_date: string;
   duration: number;
   transcript_chunks: number;
+  video_url: string;
 }
 
 export interface ChatMessage {

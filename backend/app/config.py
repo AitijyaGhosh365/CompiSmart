@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     embedding_model: str = "gemini-embedding-2"
     chroma_db_path: str = "./chroma_db"
     max_chunk_size: int = 250
-    chunk_overlap: int = 50
+    chunk_overlap: int = 3
     top_k: int = 5
 
     class Config:

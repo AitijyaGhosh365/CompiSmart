@@ -4,7 +4,7 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.services.pinecone.db import get_video, delete_video, clear_namespace
-from app.services.rag.pipeline import chat
+from app.services.rag.pipeline import chat, chat_stream
 
 VIDEO_A_URL = "https://www.youtube.com/watch?v=njNYLgjwJ8Q"
 VIDEO_B_URL = "https://www.youtube.com/watch?v=kMK7zdoHjaY"
@@ -41,8 +41,13 @@ while True:
     if not query:
         continue
 
-    response = chat(query, history=history)
-    print(f"\nCompiSmart: {response}\n")
+    print("\nCompiSmart: ", end="", flush=True)
+    response_chunks = []
+    for chunk in chat_stream(query, history=history):
+        print(chunk, end="", flush=True)
+        response_chunks.append(chunk)
+    print("\n")
+    response = "".join(response_chunks)
 
     history.append({"role": "user", "content": query})
     history.append({"role": "assistant", "content": response})

@@ -194,3 +194,36 @@ def chat(query: str, history: List[Dict[str, str]] = None) -> str:
 
     result = app.invoke({"messages": messages})
     return _extract_text(result["messages"][-1].content)
+
+
+def chat_stream(query: str, history: List[Dict[str, str]] = None):
+    messages = []
+    if history:
+        for msg in history:
+            if msg["role"] == "user":
+                messages.append(HumanMessage(content=msg["content"]))
+            elif msg["role"] == "assistant":
+                messages.append(AIMessage(content=msg["content"]))
+    messages.append(HumanMessage(content=query))
+
+    settings = get_settings()
+    chunks = search_pinecone(query=query, top_k=settings.top_k)
+
+    for vid in ["A", "B"]:
+        vid_chunks = get_all_chunks(vid)
+        seen_ids = {c["id"] for c in chunks}
+        for c in vid_chunks:
+            if c["id"] not in seen_ids:
+                chunks.append(c)
+
+    context = format_context(chunks)
+    system_msg = SystemMessage(content=f"{SYSTEM_PROMPT}\n\nContext:\n{context}")
+
+    llm = ChatGoogleGenerativeAI(
+        model=settings.llm_model,
+        google_api_key=settings.gemini_api_key,
+    )
+
+    all_messages = [system_msg] + messages
+    for chunk in llm.stream(all_messages):
+        yield _extract_text(chunk.content)

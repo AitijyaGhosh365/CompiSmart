@@ -36,20 +36,11 @@ def chunk_text(
 
     if metadata:
         meta_str = _metadata_text(metadata)
-        if len(meta_str) <= max_chunk_size:
-            chunks.append(Chunk(
-                id=f"{source_id}#meta",
-                text=meta_str,
-                metadata={"video_id": video_id, "source_url": source_url, "chunk_type": "meta"},
-            ))
-        else:
-            meta_parts = [meta_str[i:i + max_chunk_size] for i in range(0, len(meta_str), max_chunk_size)]
-            for i, part in enumerate(meta_parts):
-                chunks.append(Chunk(
-                    id=f"{source_id}#meta{i}" if i else f"{source_id}#meta",
-                    text=part,
-                    metadata={"video_id": video_id, "source_url": source_url, "chunk_type": "meta"},
-                ))
+        chunks.append(Chunk(
+            id=f"{source_id}#meta",
+            text=meta_str,
+            metadata={"video_id": video_id, "source_url": source_url, "chunk_type": "meta"},
+        ))
 
     if timestamped:
         current_parts = []

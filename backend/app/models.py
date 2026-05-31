@@ -20,6 +20,7 @@ class VideoData(BaseModel):
     upload_date: str
     duration: int
     transcript_chunks: int
+    video_url: str
 
 
 class VideoIngestResponse(BaseModel):

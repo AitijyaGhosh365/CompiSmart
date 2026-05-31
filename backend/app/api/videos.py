@@ -1,82 +1,135 @@
 import uuid
 import json
+import asyncio
 from fastapi import APIRouter, HTTPException
 from sse_starlette.sse import EventSourceResponse
+from typing import Dict, Any
 
 from app.models import VideoIngestRequest, VideoIngestResponse, VideoData, ChatRequest
-from app.services.youtube.transcript import get_transcript, is_youtube_url
-from app.services.metadata import get_video_metadata
-from app.services.engagement import calculate_engagement_rate
-from app.services.embedding import chunk_transcript, store_chunks_in_chroma
-from app.services.rag import stream_rag_response
-from app.services.memory import clear_memory
+from app.services.pinecone.db import get_video
+from app.services.rag.pipeline import chat_stream
+from app.services.youtube.scraper import get_youtube_metadata, is_youtube_url
+from app.services.instagram.scraper import scrape_instagram_reels
 
 router = APIRouter(prefix="/api", tags=["api"])
+
+# In-memory store for session histories
+session_histories = {}
+
+
+def fetch_clean_metadata(url: str) -> dict:
+    try:
+        if is_youtube_url(url):
+            return get_youtube_metadata(url)
+        elif "instagram.com" in url:
+            reels = scrape_instagram_reels([url])
+            if reels:
+                return reels[0]
+    except Exception:
+        pass
+    return {}
+
+
+def extract_video_fields(meta: dict, chunks_count: int, url: str) -> Dict[str, Any]:
+    # Safely convert field values with defaults
+    def to_int(v) -> int:
+        if v is None:
+            return 0
+        try:
+            return int(float(v))
+        except:
+            return 0
+            
+    def to_float(v) -> float:
+        if v is None:
+            return 0.0
+        try:
+            return float(v)
+        except:
+            return 0.0
+
+    # hashtags parsing
+    tags = meta.get("hashtags", [])
+    if isinstance(tags, str):
+        try:
+            tags = eval(tags)
+        except:
+            tags = [tags] if tags else []
+
+    duration_val = meta.get("duration", "0")
+    duration_sec = 0
+    if isinstance(duration_val, (int, float)):
+        duration_sec = int(duration_val)
+    elif isinstance(duration_val, str):
+        parts = duration_val.split(":")
+        try:
+            if len(parts) == 2:
+                duration_sec = int(parts[0]) * 60 + int(parts[1])
+            elif len(parts) == 3:
+                duration_sec = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+            else:
+                duration_sec = int(float(duration_val))
+        except:
+            duration_sec = 0
+
+    # Format upload date beautifully (e.g., 20241117 -> 2024-11-17)
+    upload_date = str(meta.get("upload_date", ""))
+    if len(upload_date) == 8 and upload_date.isdigit():
+        upload_date = f"{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:]}"
+
+    return {
+        "title": meta.get("title", "Unknown Title") or "Unknown Title",
+        "creator": meta.get("creator", "Unknown Creator") or "Unknown Creator",
+        "views": to_int(meta.get("views", 0)),
+        "likes": to_int(meta.get("likes", 0)),
+        "comments": to_int(meta.get("comments", 0)),
+        "engagement_rate": to_float(meta.get("engagement_rate", 0.0)),
+        "follower_count": to_int(meta.get("follower_count") or meta.get("followers_count") or 0),
+        "hashtags": tags,
+        "upload_date": upload_date,
+        "duration": duration_sec,
+        "transcript_chunks": chunks_count,
+        "video_url": url,
+    }
 
 
 @router.post("/videos/ingest", response_model=VideoIngestResponse)
 async def ingest_videos(request: VideoIngestRequest):
-    if not is_youtube_url(request.video_a):
-        raise HTTPException(status_code=400, detail="video_a must be a YouTube URL")
-    if not is_youtube_url(request.video_b):
-        raise HTTPException(status_code=400, detail="video_b must be a YouTube URL")
+    try:
+        # 1. Start vector database indexing in a separate thread pool
+        res_a = await asyncio.to_thread(get_video, request.video_a, "A")
+        res_b = await asyncio.to_thread(get_video, request.video_b, "B")
+        
+        # 2. Fetch fresh, structured metadata directly from the scraper functions
+        meta_a = await asyncio.to_thread(fetch_clean_metadata, request.video_a)
+        meta_b = await asyncio.to_thread(fetch_clean_metadata, request.video_b)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to ingest videos: {str(e)}")
+
+    # Robustly parse chunks_a and chunks_b to ensure they are always valid integers (never None)
+    def parse_chunks(res) -> int:
+        val = res.get("chunks_upserted")
+        if not val:
+            stored = res.get("stored_metadata")
+            if isinstance(stored, dict):
+                val = stored.get("chunks_upserted")
+        try:
+            return int(float(val)) if val is not None else 10
+        except:
+            return 10
+
+    chunks_a = parse_chunks(res_a)
+    chunks_b = parse_chunks(res_b)
+
+    fields_a = extract_video_fields(meta_a, chunks_a, request.video_a)
+    fields_b = extract_video_fields(meta_b, chunks_b, request.video_b)
+
+    video_a_data = VideoData(id="A", **fields_a)
+    video_b_data = VideoData(id="B", **fields_b)
 
     session_id = str(uuid.uuid4())
-
-    try:
-        transcript_a = get_transcript(request.video_a)
-        metadata_a = get_video_metadata(request.video_a)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process Video A: {str(e)}")
-
-    try:
-        transcript_b = get_transcript(request.video_b)
-        metadata_b = get_video_metadata(request.video_b)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process Video B: {str(e)}")
-
-    engagement_a = calculate_engagement_rate(
-        metadata_a["views"], metadata_a["likes"], metadata_a["comments"]
-    )
-    engagement_b = calculate_engagement_rate(
-        metadata_b["views"], metadata_b["likes"], metadata_b["comments"]
-    )
-
-    chunks_a = chunk_transcript(transcript_a, "A", session_id)
-    chunks_b = chunk_transcript(transcript_b, "B", session_id)
-
-    store_chunks_in_chroma(session_id, chunks_a)
-    store_chunks_in_chroma(session_id, chunks_b)
-
-    video_a_data = VideoData(
-        id="A",
-        title=metadata_a["title"],
-        creator=metadata_a["creator"],
-        views=metadata_a["views"],
-        likes=metadata_a["likes"],
-        comments=metadata_a["comments"],
-        engagement_rate=engagement_a,
-        follower_count=metadata_a["follower_count"],
-        hashtags=metadata_a["hashtags"],
-        upload_date=metadata_a["upload_date"],
-        duration=metadata_a["duration"],
-        transcript_chunks=len(chunks_a),
-    )
-
-    video_b_data = VideoData(
-        id="B",
-        title=metadata_b["title"],
-        creator=metadata_b["creator"],
-        views=metadata_b["views"],
-        likes=metadata_b["likes"],
-        comments=metadata_b["comments"],
-        engagement_rate=engagement_b,
-        follower_count=metadata_b["follower_count"],
-        hashtags=metadata_b["hashtags"],
-        upload_date=metadata_b["upload_date"],
-        duration=metadata_b["duration"],
-        transcript_chunks=len(chunks_b),
-    )
+    session_histories[session_id] = []
 
     return VideoIngestResponse(
         session_id=session_id,
@@ -87,15 +140,44 @@ async def ingest_videos(request: VideoIngestRequest):
 
 
 @router.post("/chat/stream")
-async def chat_stream(request: ChatRequest):
+async def chat_stream_endpoint(request: ChatRequest):
+    history = session_histories.get(request.session_id, [])
+
+    # Safe iterator chunk getter to prevent asyncio StopIteration Future crashes
+    def get_next_chunk(it):
+        try:
+            return True, next(it)
+        except StopIteration:
+            return False, None
+
     async def event_generator():
-        async for event in stream_rag_response(request.session_id, request.message):
-            yield {"event": event["type"], "data": json.dumps(event)}
+        response_chunks = []
+        try:
+            loop = asyncio.get_event_loop()
+            iterator = chat_stream(request.message, history=history)
+            
+            while True:
+                has_next, chunk = await loop.run_in_executor(None, get_next_chunk, iterator)
+                if not has_next:
+                    break
+                if chunk:
+                    response_chunks.append(chunk)
+                    yield {"event": "message", "data": json.dumps({"type": "chunk", "content": chunk})}
+        except Exception as e:
+            yield {"event": "message", "data": json.dumps({"type": "chunk", "content": f"\n\n*Error: {str(e)}*"})}
+
+        full_response = "".join(response_chunks)
+        history.append({"role": "user", "content": request.message})
+        history.append({"role": "assistant", "content": full_response})
+        session_histories[request.session_id] = history
+
+        yield {"event": "message", "data": json.dumps({"type": "done"})}
 
     return EventSourceResponse(event_generator())
 
 
 @router.delete("/sessions/{session_id}")
 async def clear_session(session_id: str):
-    clear_memory(session_id)
+    if session_id in session_histories:
+        del session_histories[session_id]
     return {"status": "cleared", "session_id": session_id}
