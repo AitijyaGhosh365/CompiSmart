@@ -14,14 +14,14 @@ from app.services.instagram.scraper import (
 # for p in profiles:
 #     print(f"  @{p.user_name} - {p.full_name} - {p.followers} followers - error: {getattr(p, 'error', None)}")
 
-# print("\n=== Posts ===")
-# posts = scrape_instagram_posts(["https://www.instagram.com/p/Cuf4s0MNqNr/"])[0]
-# print(posts)
+print("\n=== Posts ===")
+posts = scrape_instagram_posts(["https://www.instagram.com/p/DY52i9jofLS/"])[0]
+print(posts)
 
 
 # # for p in posts:
 # #     print(f"  {p.url} - likes: {p.likes} - caption: {p.caption[:50] if p.caption else None} - error: {p.error}")
 
-print("\n=== Reels ===")
-reels = scrape_instagram_reels(["https://www.instagram.com/reels/C5Rdyj_q7YN/"])[0]
-print(reels)
+# print("\n=== Reels ===")
+# reels = scrape_instagram_reels(["https://www.instagram.com/reels/DY52i9jofLS/"])[0]
+# print(reels)

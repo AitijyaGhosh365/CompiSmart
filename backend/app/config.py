@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     aicredit_api_key: str = ""
     brightdata_api_key: str = ""
+    assemblyai_api_key : str = ""
     llm_model: str = "gemini-3-flash-preview"
     embedding_model: str = "text-embedding-004"
     chroma_db_path: str = "./chroma_db"

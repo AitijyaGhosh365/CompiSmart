@@ -21,36 +21,51 @@ def _validate_url(url: str, pattern: re.Pattern) -> str:
 def _simplify_content(item: Dict[str, Any]) -> Dict[str, Any]:
     description = item.get("description", "")
 
+    duration = None
+    videos_duration = item.get("videos_duration", [])
+
+    if videos_duration and isinstance(videos_duration, list):
+        duration = videos_duration[0].get("video_duration")
+
+    video_url = None
+    videos = item.get("videos", [])
+
+    if videos and isinstance(videos, list):
+        video_url = videos[0]
+
     return {
-        "title": description.split("\n")[0] if description else None,
+        "title": description.split("\n")[0].strip() if description else None,
         "description": description,
+
         "creator": item.get("user_posted"),
+        "creator_id": item.get("user_posted_id"),
+
         "followers_count": item.get("followers"),
+
         "likes": item.get("likes"),
         "comments": item.get("num_comments"),
+
         "views": (
-            item.get("views")
+            item.get("video_play_count")
             or item.get("video_view_count")
-            or item.get("video_play_count")
+            or item.get("views")
         ),
+
         "hashtags": item.get("hashtags", []),
+
         "upload_date": item.get("date_posted"),
 
-        # reels
-        "duration": (
-            item.get("length")
-            or item.get("videos_duration")  or None
-        ),
+        "duration": duration,
 
-        "instagram_audio": (
-            item.get("audio_url")
-            or item.get("audio") or None
-        ),
+        "video_url": video_url,
 
-        # useful extras
-        # "video_url": item.get("video_url"),
-        # "thumbnail": item.get("thumbnail"),
-        # "verified": item.get("is_verified"),
+        "audio_url": item.get("audio_url"),
+
+        "content_type": item.get("content_type"),
+
+        "thumbnail": item.get("thumbnail"),
+
+        "verified": item.get("is_verified"),
     }
 
 def _scrape(
@@ -93,26 +108,26 @@ def scrape_instagram_profiles(urls: List[str]) -> List[Dict[str, Any]]:
 
 def scrape_instagram_posts(urls: List[str]) -> List[Dict[str, Any]]:
     for url in urls:
-        _validate_url(url, POST_RE)
+        _validate_url(url, POST_RE) 
 
     posts = _scrape(POST_DATASET_ID, urls)
 
-    return [
-        _simplify_content(post)
-        for post in posts
-    ]
-
+    return [_simplify_content(post) for post in posts]
 
 def scrape_instagram_reels(urls: List[str]) -> List[Dict[str, Any]]:
+    post_urls = []
+    
+
     for url in urls:
-        _validate_url(url, REEL_RE)
+        _validate_url(url, REEL_RE) or _validate_url(url, POST_RE)
 
-    reels = _scrape(REEL_DATASET_ID, urls)
+        post_urls.append(
+            url.replace("/reels/", "/p/")
+               .replace("/reel/", "/p/")
+        )
 
-    return [
-        _simplify_content(reel)
-        for reel in reels
-    ]
+    print(post_urls)
+    return scrape_instagram_posts(post_urls)
 
 def get_snapshot(snapshot_id: str) -> Dict[str, Any]:
     settings = get_settings()
