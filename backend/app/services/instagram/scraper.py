@@ -3,9 +3,9 @@ import re
 from typing import List, Dict, Any
 from app.config import get_settings
 
-PROFILE_DATASET_ID = "gd_l1vikfch901nx3by4"
-POST_DATASET_ID = "gd_lk5ns7kz21pck8jpis"
-REEL_DATASET_ID = "gd_lyclm20il4r5helnj"
+PROFILE_DATASET_ID = ""
+POST_DATASET_ID = ""
+REEL_DATASET_ID = ""
 
 BASE_URL = "https://api.brightdata.com/datasets/v3/scrape"
 
