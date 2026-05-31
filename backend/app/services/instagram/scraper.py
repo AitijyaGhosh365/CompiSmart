@@ -2,10 +2,12 @@ import httpx
 import re
 from typing import List, Dict, Any
 from app.config import get_settings
+from app.services.utils.engagement import calculate_engagement_rate
+from app.services.assemblyAi.transcript import transcribe_audio
 
-PROFILE_DATASET_ID = ""
-POST_DATASET_ID = ""
-REEL_DATASET_ID = ""
+PROFILE_DATASET_ID = "gd_l1vikfch901nx3by4"
+POST_DATASET_ID = "gd_lk5ns7kz21pck8jpis"
+REEL_DATASET_ID = "gd_lyclm20il4r5helnj"
 
 BASE_URL = "https://api.brightdata.com/datasets/v3/scrape"
 
@@ -49,6 +51,12 @@ def _simplify_content(item: Dict[str, Any]) -> Dict[str, Any]:
             item.get("video_play_count")
             or item.get("video_view_count")
             or item.get("views")
+        ),
+
+        "engagement_rate": calculate_engagement_rate(
+            item.get("video_play_count") or item.get("video_view_count") or item.get("views") or 0,
+            item.get("likes") or 0,
+            item.get("num_comments") or 0,
         ),
 
         "hashtags": item.get("hashtags", []),
@@ -119,14 +127,14 @@ def scrape_instagram_reels(urls: List[str]) -> List[Dict[str, Any]]:
     
 
     for url in urls:
-        _validate_url(url, REEL_RE) or _validate_url(url, POST_RE)
+        # _validate_url(url, REEL_RE) or _validate_url(url, POST_RE)
 
         post_urls.append(
             url.replace("/reels/", "/p/")
                .replace("/reel/", "/p/")
         )
 
-    print(post_urls)
+    # print(post_urls)
     return scrape_instagram_posts(post_urls)
 
 def get_snapshot(snapshot_id: str) -> Dict[str, Any]:
@@ -140,4 +148,21 @@ def get_snapshot(snapshot_id: str) -> Dict[str, Any]:
     )
     response.raise_for_status()
     return response.json()
+
+
+def scrape_video(url: str) -> tuple[dict, str]:
+
+    results = scrape_instagram_reels([url])
+
+    if not results:
+        raise ValueError(f"No data returned for Instagram URL: {url}")
+
+    metadata = results[0]
+    audio_url = metadata.get("video_url") or metadata.get("audio_url")
+
+    if not audio_url:
+        raise ValueError(f"No video/audio URL found for Instagram URL: {url}")
+
+    transcript = transcribe_audio(audio_url)
+    return metadata, transcript
 

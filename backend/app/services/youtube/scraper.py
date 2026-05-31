@@ -2,6 +2,7 @@ import re
 from typing import Optional
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp
+from app.services.utils.engagement import calculate_engagement_rate
 
 
 def is_youtube_url(url: str) -> bool:
@@ -32,9 +33,56 @@ def get_youtube_transcript(url: str) -> str:
 
 
 
+def get_youtube_metadata(url: str) -> dict:
+    video_id = extract_video_id(url)
+    if not video_id:
+        raise ValueError(f"Could not extract video ID from YouTube URL: {url}")
+
+    ydl_opts = {"quiet": True, "no_warnings": True, "extract_flat": False}
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+
+    return {
+        "title": info.get("title"),
+        "description": info.get("description"),
+        "creator": info.get("channel"),
+        "creator_id": info.get("channel_id"),
+        
+        "followers_count": info.get("channel_follower_count"),
+        
+        "likes": info.get("like_count"),
+        "comments": info.get("comment_count"),
+        
+        "views": info.get("view_count"),
+        
+        "engagement_rate": calculate_engagement_rate(
+            info.get("view_count") or 0,
+            info.get("like_count") or 0,
+            info.get("comment_count") or 0,
+        ),
+        
+        
+        
+        "hashtags": [tag.strip("#") for tag in info.get("tags", [])] if info.get("tags") else [],
+        
+        "upload_date": info.get("upload_date"),
+        
+        "duration": info.get("duration_string") or str(info.get("duration", "")),
+        
+        "video_url": url,
+        "audio_url": url,
+        
+        "verified": info.get("channel_is_verified"),
+    }
+
+
+def scrape_video(url: str) -> tuple[dict, str]:
+    metadata = get_youtube_metadata(url)
+    transcript = get_youtube_transcript(url)
+    return metadata, transcript
+
+
 def get_transcript(url: str) -> str:
     if is_youtube_url(url):
         return get_youtube_transcript(url)
-
-    else:
-        raise ValueError(f"Unsupported URL format: {url}")
+    raise ValueError(f"Unsupported URL format: {url}")

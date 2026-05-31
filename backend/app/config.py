@@ -8,11 +8,14 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     aicredit_api_key: str = ""
     brightdata_api_key: str = ""
-    assemblyai_api_key : str = ""
+    assemblyai_api_key: str = ""
+    pinecone_api_key: str = ""
+    pinecone_index_name: str = "compistart"
+    
     llm_model: str = "gemini-3-flash-preview"
     embedding_model: str = "gemini-embedding-2"
     chroma_db_path: str = "./chroma_db"
-    max_chunk_size: int = 500
+    max_chunk_size: int = 250
     chunk_overlap: int = 50
     top_k: int = 5
 
