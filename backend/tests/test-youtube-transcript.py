@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.services.youtube.transcript import get_transcript, is_youtube_url, is_instagram_url
+from app.services.youtube.scraper import get_transcript, is_youtube_url, is_instagram_url
 from app.services.metadata import get_video_metadata
 
 YT_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
