@@ -24,7 +24,7 @@ def get_video_metadata(url: str) -> Dict[str, Any]:
             "follower_count": info.get("channel_follower_count", 0) or 0,
             "hashtags": extract_hashtags(info.get("description", "") or ""),
             "upload_date": info.get("upload_date", "Unknown"),
-            "duration": info.get("duration", 0) or 0,
+            "duration": str(info.get("duration", 0) or 0) + " seconds",
         }
 
         return metadata
