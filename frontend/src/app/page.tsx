@@ -52,25 +52,127 @@ export default function Home() {
 
       {/* Main Workspace Body */}
       <div className="flex-1 p-6 relative overflow-hidden h-[calc(100vh-4rem)] flex items-center justify-center">
-        {!sessionId ? (
-          /* Landing page with Ingestion Form */
-          <div className="w-full max-w-md mx-auto py-12 relative z-10">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center space-y-4 py-16 text-center bg-white border border-zinc-200 rounded-3xl p-8 shadow-xl">
-                <div className="relative w-16 h-16">
-                  <span className="absolute inset-0 border-4 border-blue-600/10 rounded-full" />
-                  <span className="absolute inset-0 border-4 border-t-blue-600 border-r-indigo-600 rounded-full animate-spin" />
+        {isLoading ? (
+          /* Three-Column Console Pulsating Loading Skeleton */
+          <div className="w-full h-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden animate-pulse relative">
+            {/* Left Column Skeleton: Video Player A */}
+            <div className="lg:col-span-3 h-full border border-zinc-200/80 bg-white rounded-2xl p-4 flex flex-col justify-between overflow-hidden shadow-sm space-y-4">
+              <div className="space-y-3 flex-none">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-zinc-200" />
+                    <div className="space-y-1">
+                      <div className="h-2.5 w-16 bg-zinc-200 rounded" />
+                      <div className="h-2 w-10 bg-zinc-100 rounded" />
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-zinc-100 border border-zinc-200/50" />
                 </div>
-                <div className="space-y-1.5 mt-4">
-                  <h3 className="text-base font-bold text-zinc-800">Ingesting Transcripts</h3>
-                  <p className="text-xs text-zinc-500 max-w-[280px]">
-                    Downloading video audio, transcribing using AssemblyAI, chunking, and index-indexing in Pinecone DB...
-                  </p>
+                <div className="aspect-video w-full bg-zinc-200 rounded-xl" />
+                <div className="space-y-2">
+                  <div className="h-3.5 w-[80%] bg-zinc-200 rounded" />
+                  <div className="h-2 w-[40%] bg-zinc-100 rounded" />
                 </div>
               </div>
-            ) : (
-              <IngestForm />
-            )}
+              <div className="grid grid-cols-3 gap-2 bg-zinc-50 border border-zinc-200/50 rounded-xl p-3">
+                <div className="h-8 bg-zinc-200 rounded" />
+                <div className="h-8 bg-zinc-200 rounded" />
+                <div className="h-8 bg-zinc-200 rounded" />
+              </div>
+              <div className="flex gap-2">
+                <div className="h-4 w-12 bg-zinc-200 rounded" />
+                <div className="h-4 w-16 bg-zinc-200 rounded" />
+              </div>
+            </div>
+
+            {/* Center Column Skeleton: Chat / Co-Pilot */}
+            <div className="lg:col-span-6 h-full border border-zinc-200/80 bg-white rounded-2xl overflow-hidden flex flex-col justify-between shadow-sm relative">
+              {/* Header Skeleton */}
+              <div className="p-3 border-b border-zinc-200 bg-zinc-50 flex items-center justify-between flex-none">
+                <div className="h-7 w-36 bg-zinc-200 rounded-xl" />
+                <div className="h-3.5 w-20 bg-zinc-200 rounded" />
+              </div>
+              {/* Chat Feed Skeleton */}
+              <div className="flex-1 p-5 space-y-4 overflow-hidden relative">
+                <div className="flex justify-end">
+                  <div className="h-10 w-[40%] bg-zinc-100 rounded-2xl rounded-tr-none" />
+                </div>
+                <div className="flex gap-2">
+                  <div className="w-8 h-8 rounded-full bg-zinc-200 flex-none" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-3 w-[70%] bg-zinc-200 rounded" />
+                    <div className="h-3 w-[85%] bg-zinc-200 rounded" />
+                    <div className="h-3 w-[50%] bg-zinc-200 rounded" />
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <div className="h-8 w-[30%] bg-zinc-100 rounded-2xl rounded-tr-none" />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <div className="w-8 h-8 rounded-full bg-zinc-200 flex-none" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-3 w-[60%] bg-zinc-200 rounded" />
+                    <div className="h-3 w-[40%] bg-zinc-200 rounded" />
+                  </div>
+                </div>
+              </div>
+              {/* Input Skeleton */}
+              <div className="p-4 border-t border-zinc-200 bg-white flex items-center gap-3 flex-none">
+                <div className="h-10 flex-1 bg-zinc-100 rounded-xl" />
+                <div className="h-10 w-16 bg-zinc-200 rounded-xl" />
+              </div>
+
+              {/* Glassmorphic Active Ingestion Progress Card */}
+              <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center z-20">
+                <div className="flex flex-col items-center justify-center space-y-4 py-8 px-6 text-center bg-white border border-zinc-200/80 rounded-3xl shadow-xl max-w-sm mx-4">
+                  <div className="relative w-12 h-12">
+                    <span className="absolute inset-0 border-4 border-blue-600/10 rounded-full" />
+                    <span className="absolute inset-0 border-4 border-t-blue-600 border-r-indigo-600 rounded-full animate-spin" />
+                  </div>
+                  <div className="space-y-1.5 mt-2">
+                    <h3 className="text-xs font-black text-zinc-800 uppercase tracking-wider">Ingesting Transcripts</h3>
+                    <p className="text-[10px] text-zinc-500 max-w-[240px] leading-relaxed">
+                      Downloading video audio, transcribing using AssemblyAI, chunking transcripts, and indexing Pinecone database...
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column Skeleton: Video Player B */}
+            <div className="lg:col-span-3 h-full border border-zinc-200/80 bg-white rounded-2xl p-4 flex flex-col justify-between overflow-hidden shadow-sm space-y-4">
+              <div className="space-y-3 flex-none">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-zinc-200" />
+                    <div className="space-y-1">
+                      <div className="h-2.5 w-18 bg-zinc-200 rounded" />
+                      <div className="h-2 w-12 bg-zinc-100 rounded" />
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-zinc-100 border border-zinc-200/50" />
+                </div>
+                <div className="aspect-video w-full bg-zinc-200 rounded-xl" />
+                <div className="space-y-2">
+                  <div className="h-3.5 w-[75%] bg-zinc-200 rounded" />
+                  <div className="h-2 w-[50%] bg-zinc-100 rounded" />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 bg-zinc-50 border border-zinc-200/50 rounded-xl p-3">
+                <div className="h-8 bg-zinc-200 rounded" />
+                <div className="h-8 bg-zinc-200 rounded" />
+                <div className="h-8 bg-zinc-200 rounded" />
+              </div>
+              <div className="flex gap-2">
+                <div className="h-4 w-10 bg-zinc-200 rounded" />
+                <div className="h-4 w-14 bg-zinc-200 rounded" />
+              </div>
+            </div>
+          </div>
+        ) : !sessionId ? (
+          /* Landing page with Ingestion Form */
+          <div className="w-full max-w-md mx-auto py-12 relative z-10">
+            <IngestForm />
           </div>
         ) : (
           /* Full Height Three-Column Comparative Console Grid */

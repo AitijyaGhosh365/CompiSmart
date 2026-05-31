@@ -154,15 +154,124 @@ async def chat_stream_endpoint(request: ChatRequest):
         response_chunks = []
         try:
             loop = asyncio.get_event_loop()
-            iterator = chat_stream(request.message, history=history)
             
+            # Step 1: Pinecone Querying
+            yield {
+                "event": "message",
+                "data": json.dumps({
+                    "type": "chunk",
+                    "content": "🔍 *Querying Pinecone vector database for matching concepts...*\n"
+                })
+            }
+            await asyncio.sleep(0.3)
+
+            from app.services.rag.pipeline import (
+                search_pinecone,
+                get_all_chunks,
+                format_context,
+                SYSTEM_PROMPT,
+                _extract_text
+            )
+            from app.config import get_settings
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+
+            settings = get_settings()
+
+            # Execute Pinecone lookup in executor
+            chunks = await loop.run_in_executor(
+                None, 
+                lambda: search_pinecone(query=request.message, top_k=settings.top_k)
+            )
+
+            # Step 2: Report Matches Found
+            yield {
+                "event": "message",
+                "data": json.dumps({
+                    "type": "chunk",
+                    "content": f"⚡ *Found {len(chunks)} relevant semantic matches. Retrieving full video segments...*\n"
+                })
+            }
+            await asyncio.sleep(0.2)
+
+            # Fetch transcripts and construct complete context
+            def compile_extra_chunks():
+                extra_c = []
+                seen_ids = {c["id"] for c in chunks}
+                for vid in ["A", "B"]:
+                    vid_chunks = get_all_chunks(vid)
+                    for c in vid_chunks:
+                        if c["id"] not in seen_ids:
+                            seen_ids.add(c["id"])
+                            extra_c.append(c)
+                return extra_c
+
+            extra_chunks = await loop.run_in_executor(None, compile_extra_chunks)
+            total_loaded = len(chunks) + len(extra_chunks)
+
+            # Step 3: Report Context Compiled
+            yield {
+                "event": "message",
+                "data": json.dumps({
+                    "type": "chunk",
+                    "content": f"📚 *Compiled {total_loaded} context blocks. Injecting comparative RAG references...*\n"
+                })
+            }
+            await asyncio.sleep(0.2)
+
+            # Package and yield sources to the frontend
+            sources = []
+            for c in chunks + extra_chunks:
+                sources.append({
+                    "video": c.get("video_id", "A"),
+                    "chunk_id": c.get("id", ""),
+                    "text": c.get("text", "")[:120] + "..."
+                })
+            
+            yield {"event": "message", "data": json.dumps({"type": "sources", "sources": sources})}
+
+            # Step 4: Contact LLM
+            yield {
+                "event": "message",
+                "data": json.dumps({
+                    "type": "chunk",
+                    "content": "🤖 *Formulating response with Gemini Generative AI...*\n\n"
+                })
+            }
+
+            # Gather messages history
+            messages_history = []
+            if history:
+                for msg in history:
+                    if msg["role"] == "user":
+                        messages_history.append(HumanMessage(content=msg["content"]))
+                    elif msg["role"] == "assistant":
+                        messages_history.append(AIMessage(content=msg["content"]))
+            messages_history.append(HumanMessage(content=request.message))
+
+            full_chunks = chunks + extra_chunks
+            context = format_context(full_chunks)
+            system_msg = SystemMessage(content=f"{SYSTEM_PROMPT}\n\nContext:\n{context}")
+
+            llm = ChatGoogleGenerativeAI(
+                model=settings.llm_model,
+                google_api_key=settings.gemini_api_key,
+            )
+            all_messages = [system_msg] + messages_history
+
+            # Obtain streaming iterator in executor
+            stream_it = await loop.run_in_executor(None, lambda: llm.stream(all_messages))
+
             while True:
-                has_next, chunk = await loop.run_in_executor(None, get_next_chunk, iterator)
+                has_next, llm_chunk = await loop.run_in_executor(None, get_next_chunk, stream_it)
                 if not has_next:
                     break
-                if chunk:
-                    response_chunks.append(chunk)
-                    yield {"event": "message", "data": json.dumps({"type": "chunk", "content": chunk})}
+                if llm_chunk:
+                    content = _extract_text(llm_chunk.content)
+                    if content:
+                        response_chunks.append(content)
+                        yield {"event": "message", "data": json.dumps({"type": "chunk", "content": content})}
+
         except Exception as e:
             yield {"event": "message", "data": json.dumps({"type": "chunk", "content": f"\n\n*Error: {str(e)}*"})}
 
