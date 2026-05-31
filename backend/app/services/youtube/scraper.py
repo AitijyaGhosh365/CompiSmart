@@ -30,6 +30,19 @@ def get_youtube_transcript(url: str) -> str:
     return " ".join([snippet.text for snippet in transcript.snippets])
 
 
+def get_youtube_transcript_timestamped(url: str) -> list:
+    video_id = extract_video_id(url)
+    if not video_id:
+        raise ValueError(f"Could not extract video ID from YouTube URL: {url}")
+
+    api = YouTubeTranscriptApi()
+    transcript = api.fetch(video_id)
+    return [
+        {"text": snippet.text, "start": snippet.start, "duration": snippet.duration}
+        for snippet in transcript.snippets
+    ]
+
+
 
 
 
@@ -80,6 +93,12 @@ def scrape_video(url: str) -> tuple[dict, str]:
     metadata = get_youtube_metadata(url)
     transcript = get_youtube_transcript(url)
     return metadata, transcript
+
+
+def scrape_video_timestamped(url: str) -> tuple[dict, list]:
+    metadata = get_youtube_metadata(url)
+    timestamped = get_youtube_transcript_timestamped(url)
+    return metadata, timestamped
 
 
 def get_transcript(url: str) -> str:

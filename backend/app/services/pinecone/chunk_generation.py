@@ -15,8 +15,15 @@ def _metadata_text(meta: Dict[str, Any]) -> str:
     return ". ".join(parts)
 
 
+def _format_time(seconds: float) -> str:
+    minutes = int(seconds) // 60
+    secs = int(seconds) % 60
+    return f"{minutes}:{secs:02d}"
+
+
 def chunk_text(
-    text: str,
+    text: str = "",
+    timestamped: List[Dict[str, Any]] = None,
     max_chunk_size: int = 250,
     overlap: int = 50,
     video_id: str = "",
@@ -43,6 +50,55 @@ def chunk_text(
                     text=part,
                     metadata={"video_id": video_id, "source_url": source_url, "chunk_type": "meta"},
                 ))
+
+    if timestamped:
+        current_parts = []
+        current_start = timestamped[0]["start"] if timestamped else 0
+        chunk_index = 0
+
+        for i, snippet in enumerate(timestamped):
+            time_label = f"[{_format_time(snippet['start'])}]"
+            part = f"{time_label} {snippet['text']}"
+
+            if sum(len(p) for p in current_parts) + len(part) + len(current_parts) > max_chunk_size and current_parts:
+                chunk_text_str = " ".join(current_parts)
+                end_time = timestamped[i - 1]["start"] + timestamped[i - 1].get("duration", 0)
+                chunks.append(Chunk(
+                    id=f"{source_id}#chunk{chunk_index}",
+                    text=chunk_text_str,
+                    metadata={
+                        "video_id": video_id,
+                        "source_url": source_url,
+                        "chunk_type": "transcript",
+                        "chunk_index": chunk_index,
+                        "start_time": current_start,
+                        "end_time": end_time,
+                    },
+                ))
+                chunk_index += 1
+                overlap_snippets = timestamped[max(0, i - overlap):i]
+                current_parts = [f"[{_format_time(s['start'])}] {s['text']}" for s in overlap_snippets]
+                if overlap_snippets:
+                    current_start = overlap_snippets[0]["start"]
+            else:
+                current_parts.append(part)
+
+        if current_parts:
+            end_time = timestamped[-1]["start"] + timestamped[-1].get("duration", 0)
+            chunks.append(Chunk(
+                id=f"{source_id}#chunk{chunk_index}",
+                text=" ".join(current_parts),
+                metadata={
+                    "video_id": video_id,
+                    "source_url": source_url,
+                    "chunk_type": "transcript",
+                    "chunk_index": chunk_index,
+                    "start_time": current_start,
+                    "end_time": end_time,
+                },
+            ))
+
+        return chunks
 
     sentences = re.split(r'(?<=[.!?])\s+', text.strip())
     sentences = [s for s in sentences if s.strip()]

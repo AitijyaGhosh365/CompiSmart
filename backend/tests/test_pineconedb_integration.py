@@ -15,4 +15,6 @@ if result['status'] == 'added':
     print(f"Chunks upserted: {result.get('chunks_upserted', 'N/A')}")
     print(f"Metadata keys: {list(result.get('metadata', {}).keys())}")
 elif result['status'] == 'exists':
+    import sys
+    sys.stdout.reconfigure(encoding='utf-8')
     print(f"Stored metadata: {result.get('stored_metadata', {})}")
