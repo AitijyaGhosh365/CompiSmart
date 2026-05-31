@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     brightdata_api_key: str = ""
     assemblyai_api_key : str = ""
     llm_model: str = "gemini-3-flash-preview"
-    embedding_model: str = "text-embedding-004"
+    embedding_model: str = "gemini-embedding-2"
     chroma_db_path: str = "./chroma_db"
     max_chunk_size: int = 500
     chunk_overlap: int = 50
