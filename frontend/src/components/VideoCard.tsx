@@ -1,7 +1,7 @@
 "use client";
 
 import { VideoData } from "@/types";
-import { Eye, Heart, MessageSquare, Users, Calendar, Clock, Hash } from "lucide-react";
+import { Eye, Heart, MessageSquare, Users, Calendar, Clock, Hash, ExternalLink } from "lucide-react";
 
 const getEmbedUrl = (url: string) => {
   if (!url) return "";
@@ -70,6 +70,22 @@ export default function VideoCard({ video }: { video: VideoData }) {
           </div>
         </div>
       </div>
+
+      {/* Link to original video */}
+      {video.video_url && (
+        <div className="px-4 pt-3 flex-none">
+          <a
+            href={video.video_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-1.5 text-[10px] font-medium rounded-lg px-2.5 py-1.5 transition-colors ${isA ? "text-blue-600 bg-blue-50 hover:bg-blue-100" : "text-violet-600 bg-violet-50 hover:bg-violet-100"}`}
+            title={video.video_url}
+          >
+            <ExternalLink size={11} />
+            <span className="truncate max-w-[200px]">{video.video_url.replace(/^https?:\/\/(www\.)?/, "")}</span>
+          </a>
+        </div>
+      )}
 
       {/* Video Player */}
       <div className="p-3 flex-none">
