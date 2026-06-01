@@ -8,6 +8,7 @@ venv/
 ENV/
 chroma_db/
 .env
+cookies.txt
 *.egg-info/
 dist/
 build/

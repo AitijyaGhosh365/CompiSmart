@@ -1,8 +1,11 @@
 import re
+import httpx
 from typing import Optional
-from youtube_transcript_api import YouTubeTranscriptApi
-import yt_dlp
+from app.config import get_settings
 from app.services.utils.engagement import calculate_engagement_rate
+
+YOUTUBE_DATASET_ID = "gd_lk56epmy2i5g7lzu0k"
+BRIGHTDATA_URL = "https://api.brightdata.com/datasets/v3/scrape"
 
 
 def is_youtube_url(url: str) -> bool:
@@ -11,7 +14,6 @@ def is_youtube_url(url: str) -> bool:
         r'((www|m)\.)?'
         r'(youtube\.com/(watch\?v=|shorts/)|youtu\.be/)'
     )
-    print("Validated :", bool(re.match(pattern, url)))
     return bool(re.match(pattern, url))
 
 
@@ -29,30 +31,38 @@ def extract_video_id(url: str) -> Optional[str]:
     return None
 
 
-def get_youtube_transcript(url: str) -> str:
-    video_id = extract_video_id(url)
-    if not video_id:
-        raise ValueError(f"Could not extract video ID from YouTube URL: {url}")
+def _fetch_brightdata(url: str) -> dict:
+    settings = get_settings()
+    resp = httpx.post(
+        BRIGHTDATA_URL,
+        headers={
+            "Authorization": f"Bearer {settings.brightdata_api_key}",
+            "Content-Type": "application/json",
+        },
+        params={"dataset_id": YOUTUBE_DATASET_ID, "include_errors": "true"},
+        json={"input": [{"url": url}]},
+        timeout=120.0,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if isinstance(data, dict):
+        if "output" in data:
+            data = data["output"]
+        else:
+            data = [data]
+    if isinstance(data, list) and data:
+        return data[0]
+    return {}
 
-    api = YouTubeTranscriptApi()
-    transcript = api.fetch(video_id)
-    return " ".join([snippet.text for snippet in transcript.snippets])
+
+def get_youtube_transcript(url: str) -> str:
+    raw = _fetch_brightdata(url)
+    return raw.get("transcript") or "[No transcript available]"
 
 
 def get_youtube_transcript_timestamped(url: str) -> list:
-    video_id = extract_video_id(url)
-    if not video_id:
-        raise ValueError(f"Could not extract video ID from YouTube URL: {url}")
-
-    api = YouTubeTranscriptApi()
-    transcript = api.fetch(video_id)
-    return [
-        {"text": snippet.text, "start": snippet.start, "duration": snippet.duration}
-        for snippet in transcript.snippets
-    ]
-
-
-
+    transcript = get_youtube_transcript(url)
+    return [{"text": transcript, "start": 0.0, "duration": 0.0}]
 
 
 def get_youtube_metadata(url: str) -> dict:
@@ -60,71 +70,66 @@ def get_youtube_metadata(url: str) -> dict:
     if not video_id:
         raise ValueError(f"Could not extract video ID from YouTube URL: {url}")
 
-    ydl_opts = {"quiet": True, "no_warnings": True, "extract_flat": False}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
+    settings = get_settings()
+    resp = httpx.get(
+        "https://www.googleapis.com/youtube/v3/videos",
+        params={
+            "part": "snippet,statistics,contentDetails",
+            "id": video_id,
+            "key": settings.youtube_api_key,
+        },
+        timeout=15.0,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    item = data["items"][0] if data.get("items") else {}
+
+    snippet = item.get("snippet", {})
+    stats = item.get("statistics", {})
+    details = item.get("contentDetails", {})
+
+    views = int(stats.get("viewCount", 0))
+    likes = int(stats.get("likeCount", 0))
+    comments = int(stats.get("commentCount", 0))
 
     return {
-        "title": info.get("title"),
-        "description": info.get("description"),
-        "creator": info.get("channel"),
-        "creator_id": info.get("channel_id"),
-        
-        "followers_count": info.get("channel_follower_count"),
-        
-        "likes": info.get("like_count"),
-        "comments": info.get("comment_count"),
-        
-        "views": info.get("view_count"),
-        
-        "engagement_rate": calculate_engagement_rate(
-            info.get("view_count") or 0,
-            info.get("like_count") or 0,
-            info.get("comment_count") or 0,
-        ),
-        
-        
-        
-        "hashtags": [tag.strip("#") for tag in info.get("tags", [])] if info.get("tags") else [],
-        
-        "upload_date": info.get("upload_date"),
-        
-        "duration": info.get("duration_string") or str(info.get("duration", "")),
-        
+        "title": snippet.get("title", ""),
+        "description": snippet.get("description", ""),
+        "creator": snippet.get("channelTitle", ""),
+        "creator_id": snippet.get("channelId", ""),
+        "followers_count": 0,
+        "likes": likes,
+        "comments": comments,
+        "views": views,
+        "engagement_rate": calculate_engagement_rate(views, likes, comments),
+        "hashtags": snippet.get("tags", []),
+        "upload_date": snippet.get("publishedAt", ""),
+        "duration": details.get("duration", ""),
         "video_url": url,
         "audio_url": url,
-        
-        "verified": info.get("channel_is_verified"),
+        "verified": False,
     }
 
 
 def scrape_video(url: str) -> tuple[dict, str]:
-    print(f"  [Scraper] Fetching YouTube metadata for URL: {url}...")
+    print(f"  [Scraper] Fetching YouTube metadata via API...")
     metadata = get_youtube_metadata(url)
-    print(f"  [Scraper] YouTube metadata fetched successfully. Channel: @{metadata.get('creator')}.")
+    print(f"  [Scraper] Metadata fetched. Channel: @{metadata.get('creator')}.")
     
-    print(f"  [Scraper] Fetching YouTube transcript subtitles...")
-    try:
-        transcript = get_youtube_transcript(url)
-        print(f"  [Scraper] YouTube transcript subtitles fetched successfully.")
-    except Exception as e:
-        print(f"  [Scraper] Transcript fetch failed for YouTube URL {url}: {e}. Falling back to placeholder.")
-        transcript = "[No transcript available for this video]"
+    print(f"  [Scraper] Fetching transcript via Bright Data...")
+    transcript = get_youtube_transcript(url)
+    print(f"  [Scraper] Transcript ready ({len(transcript)} chars).")
     return metadata, transcript
 
 
 def scrape_video_timestamped(url: str) -> tuple[dict, list]:
-    print(f"  [Scraper] Fetching YouTube metadata for URL: {url}...")
+    print(f"  [Scraper] Fetching YouTube metadata via API...")
     metadata = get_youtube_metadata(url)
-    print(f"  [Scraper] YouTube metadata fetched successfully. Channel: @{metadata.get('creator')}.")
+    print(f"  [Scraper] Metadata fetched. Channel: @{metadata.get('creator')}.")
     
-    print(f"  [Scraper] Fetching YouTube transcript subtitles...")
-    try:
-        timestamped = get_youtube_transcript_timestamped(url)
-        print(f"  [Scraper] YouTube transcript subtitles fetched successfully ({len(timestamped)} segments).")
-    except Exception as e:
-        print(f"  [Scraper] Transcript fetch failed for YouTube URL {url}: {e}. Falling back to placeholder.")
-        timestamped = [{"text": "[No transcript available for this video]", "start": 0.0, "duration": 10.0}]
+    print(f"  [Scraper] Fetching transcript via Bright Data...")
+    timestamped = get_youtube_transcript_timestamped(url)
+    print(f"  [Scraper] Transcript ready.")
     return metadata, timestamped
 
 

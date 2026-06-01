@@ -5,7 +5,7 @@ import { Eye, Heart, MessageSquare, Users, Calendar, Clock, Hash, ExternalLink }
 
 const getEmbedUrl = (url: string) => {
   if (!url) return "";
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/);
+  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/);
   if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
   const igMatch = url.match(/instagram\.com\/(?:reels?|p)\/([a-zA-Z0-9_-]+)/);
   if (igMatch) return `https://www.instagram.com/p/${igMatch[1]}/embed`;

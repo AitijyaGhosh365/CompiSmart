@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     assemblyai_api_key: str = ""
     pinecone_api_key: str = ""
     pinecone_index_name: str = "compistart"
+    youtube_api_key: str = ""
     
     llm_model: str = "gemini-3-flash-preview"
     embedding_model: str = "gemini-embedding-2"

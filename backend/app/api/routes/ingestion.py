@@ -124,6 +124,10 @@ async def ingest_videos(request: VideoIngestRequest):
         except:
             return 10
 
+    
+    print(res_a)
+    print(res_b)
+    
     chunks_a = parse_chunks(res_a)
     chunks_b = parse_chunks(res_b)
 

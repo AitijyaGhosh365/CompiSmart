@@ -10,8 +10,8 @@ VIDEO_A_URL = "https://www.instagram.com/reel/DYrHdO-OkOM/"
 VIDEO_B_URL = "https://www.instagram.com/reel/DYsSOk_p0yi/"
 
 
-VIDEO_A_URL = "https://www.youtube.com/watch?v=F0cdbR5ognY"
-VIDEO_B_URL = "https://www.youtube.com/shorts/ONNYnv2DGFo"
+VIDEO_A_URL = "https://www.youtube.com/shorts/fe6Wc6OaMK8"
+VIDEO_B_URL = "https://www.youtube.com/shorts/ncqLXPYUlv0"
 
 
 print("\n=== Ingesting Video A ===")

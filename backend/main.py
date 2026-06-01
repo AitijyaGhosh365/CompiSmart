@@ -32,6 +32,10 @@ async def health_check():
     return HealthResponse(status="ok", vector_db="connected")
 
 
+@app.get("/api/version", response_model=HealthResponse)
+async def health_check():
+    return HealthResponse(status="3.5", vector_db="connected")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
