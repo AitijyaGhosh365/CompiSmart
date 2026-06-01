@@ -43,14 +43,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           onKeyDown={handleKeyDown}
           placeholder="Ask about engagement, hooks, or comparison..."
           rows={1}
-          className="w-full px-4 py-2.5 bg-transparent text-slate-800 placeholder-slate-400 resize-none min-h-[42px] max-h-[120px] focus:outline-none text-sm"
+          className="w-full px-4 py-2.5 bg-transparent text-slate-800 placeholder-slate-400 resize-none min-h-10.5 max-h-30 focus:outline-none text-sm"
           disabled={disabled}
         />
       </div>
       <button
         type="submit"
         disabled={disabled || !value.trim()}
-        className="h-[42px] w-[42px] flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/25 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:shadow-none transition-all duration-200 flex-shrink-0"
+        className="h-10.5 w-10.5 flex items-center justify-center bg-linear-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/25 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:shadow-none transition-all duration-200 shrink-0"
       >
         <Send size={15} />
       </button>

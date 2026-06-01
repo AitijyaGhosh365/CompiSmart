@@ -11,10 +11,10 @@ export default function ChatMessageComponent({ message }: { message: ChatMessage
   if (message.role === "user") {
     return (
       <div className="flex justify-end items-start gap-2.5 animate-fade-in-up">
-        <div className="max-w-[80%] bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-br-sm px-4 py-2.5 shadow-md">
+        <div className="max-w-[80%] bg-linear-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-br-sm px-4 py-2.5 shadow-md">
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
         </div>
-        <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
           <User size={14} className="text-blue-500" />
         </div>
       </div>
@@ -26,7 +26,7 @@ export default function ChatMessageComponent({ message }: { message: ChatMessage
 
   return (
     <div className="flex justify-start items-start gap-2.5 animate-fade-in-up">
-      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 border border-blue-200/50 flex items-center justify-center flex-shrink-0 shadow-sm">
+      <div className="w-8 h-8 rounded-xl bg-linear-to-br from-blue-100 to-indigo-100 border border-blue-200/50 flex items-center justify-center shrink-0 shadow-sm">
         <Sparkles size={14} className="text-blue-600" />
       </div>
       <div className="max-w-[90%] space-y-2">

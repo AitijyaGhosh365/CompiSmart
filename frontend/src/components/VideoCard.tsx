@@ -74,7 +74,7 @@ export default function VideoCard({ video }: { video: VideoData }) {
       {/* Video Player */}
       <div className="p-3 flex-none">
         {embedUrl ? (
-          <div className={`relative ${isInstagram ? "aspect-[9/16] mx-auto max-w-[70%]" : "aspect-video"} rounded-xl overflow-hidden border border-slate-200/60 shadow-sm group`}>
+          <div className={`relative ${isInstagram ? "aspect-9/16 mx-auto max-w-[70%]" : "aspect-video"} rounded-xl overflow-hidden border border-slate-200/60 shadow-sm group`}>
             <iframe
               src={embedUrl}
               className="absolute inset-0 w-full h-full border-0"

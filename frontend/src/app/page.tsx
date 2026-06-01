@@ -20,18 +20,18 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-blue-50/30 overflow-hidden">
+    <div className="h-screen flex flex-col bg-linear-to-br from-slate-50 via-white to-blue-50/30 overflow-hidden">
       {/* Ambient Background Orbs */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-[600px] h-[600px] bg-blue-200/20 rounded-full blur-[120px]" />
-        <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-indigo-200/15 rounded-full blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-100/10 rounded-full blur-[150px]" />
+        <div className="absolute -top-32 -left-32 w-150 h-150 bg-blue-200/20 rounded-full blur-[120px]" />
+        <div className="absolute -bottom-32 -right-32 w-125 h-125 bg-indigo-200/15 rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 bg-violet-100/10 rounded-full blur-[150px]" />
       </div>
 
       {/* Header */}
       <header className="h-16 px-6 flex items-center justify-between flex-none z-50 border-b border-slate-200 bg-white/90 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+          <div className="w-8 h-8 rounded-lg bg-linear-to-r from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20">
             <Film className="w-4 h-4 text-white" />
           </div>
           <div className="flex items-center gap-1.5">
@@ -84,7 +84,7 @@ function LandingPage() {
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-800 leading-tight">
           Analyze & Compare
           <br />
-          <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">Video Performance</span>
+          <span className="bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">Video Performance</span>
         </h2>
 
         <p className="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">

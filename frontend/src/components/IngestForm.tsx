@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { ingestVideos } from "@/lib/api";
-import { Sparkles, Link2, ArrowRight, Youtube, Instagram } from "lucide-react";
+import { Sparkles, Link2, ArrowRight } from "lucide-react";
 
 const YoutubeIcon = ({ size = 15 }: { size?: number }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -98,7 +98,7 @@ export default function IngestForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:scale-100 transition-all duration-200 flex items-center justify-center gap-2"
+        className="w-full py-3.5 px-6 bg-linaer-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:scale-100 transition-all duration-200 flex items-center justify-center gap-2"
       >
         {isLoading ? (
           <>

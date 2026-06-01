@@ -5,7 +5,8 @@ import { useStore } from "@/lib/store";
 import { streamChat } from "@/lib/api";
 import ChatMessageComponent from "./ChatMessage";
 import ChatInput from "./ChatInput";
-import { MessageSquare, BarChart3, Sparkles, TrendingUp, Award, Zap, ChevronRight } from "lucide-react";
+import { MessageSquare, BarChart3, Sparkles, TrendingUp, Zap, ChevronRight } from "lucide-react";
+import { VideoData } from "@/types";
 
 export default function ChatPanel() {
   const { sessionId, videoA, videoB, messages, addMessage, updateStreamingMessage, setStreamingSources, isStreaming, setStreaming } = useStore();
@@ -32,7 +33,7 @@ export default function ChatPanel() {
   if (!sessionId) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
-        <div className="w-16 h-16 rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+        <div className="w-16 h-16 rounded-3xl bg-linear-to-r from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
           <Sparkles className="w-7 h-7 text-white" />
         </div>
         <p className="text-sm font-semibold text-slate-500">Ingest two videos to unlock analysis</p>
@@ -98,7 +99,7 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
   );
 }
 
-function StatsDashboard({ videoA, videoB }: { videoA: NonNullable<ReturnType<typeof useStore>["videoA"]>; videoB: NonNullable<ReturnType<typeof useStore>["videoB"]> }) {
+function StatsDashboard({ videoA, videoB }: { videoA: VideoData; videoB: VideoData }) {
   const formatNumber = (n: number) => {
     if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
     if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
@@ -201,10 +202,10 @@ function SplitBar({ label, pctA, valA, valB }: { label: string; pctA: number; va
         <span className="text-violet-600">B: {valB}</span>
       </div>
       <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex">
-        <div style={{ width: `${pctA}%` }} className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-l-full transition-all duration-700 flex items-center justify-center">
+        <div style={{ width: `${pctA}%` }} className="h-full bg-linear-to-r from-blue-500 to-blue-600 rounded-l-full transition-all duration-700 flex items-center justify-center">
           {pctA > 25 && <span className="text-[7px] font-bold text-white">{pctA.toFixed(0)}%</span>}
         </div>
-        <div style={{ width: `${100 - pctA}%` }} className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-r-full transition-all duration-700 flex items-center justify-center">
+        <div style={{ width: `${100 - pctA}%` }} className="h-full bg-linear-to-r from-violet-500 to-violet-600 rounded-r-full transition-all duration-700 flex items-center justify-center">
           {100 - pctA > 25 && <span className="text-[7px] font-bold text-white">{(100 - pctA).toFixed(0)}%</span>}
         </div>
       </div>
