@@ -82,7 +82,7 @@ export default function VideoCard({ video }: { video: VideoData }) {
             title={video.video_url}
           >
             <ExternalLink size={11} />
-            <span className="truncate max-w-[200px]">{video.video_url.replace(/^https?:\/\/(www\.)?/, "")}</span>
+            <span className="truncate max-w-50">{video.video_url.replace(/^https?:\/\/(www\.)?/, "")}</span>
           </a>
         </div>
       )}
