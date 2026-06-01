@@ -98,7 +98,7 @@ export default function IngestForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full py-3.5 px-6 bg-linaer-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:scale-100 transition-all duration-200 flex items-center justify-center gap-2"
+        className="w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:scale-100 transition-all duration-200 flex items-center justify-center gap-2"
       >
         {isLoading ? (
           <>
