@@ -6,7 +6,13 @@ from app.services.utils.engagement import calculate_engagement_rate
 
 
 def is_youtube_url(url: str) -> bool:
-    return bool(re.match(r'(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)', url))
+    pattern = (
+        r'^(https?://)?'
+        r'((www|m)\.)?'
+        r'(youtube\.com/(watch\?v=|shorts/)|youtu\.be/)'
+    )
+    print("Validated :", bool(re.match(pattern, url)))
+    return bool(re.match(pattern, url))
 
 
 def extract_video_id(url: str) -> Optional[str]:
@@ -15,6 +21,9 @@ def extract_video_id(url: str) -> Optional[str]:
         if match:
             return match.group(1)
         match = re.search(r'youtu\.be/([a-zA-Z0-9_-]+)', url)
+        if match:
+            return match.group(1)
+        match = re.search(r'shorts/([a-zA-Z0-9_-]+)', url)
         if match:
             return match.group(1)
     return None
