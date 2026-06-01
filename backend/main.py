@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.videos import router as api_router
+from app.api.routes.ingestion import router as ingestion_router
+from app.api.routes.chat import router as chat_router
 from app.api.instagram import router as instagram_router
 from app.api.youtube import router as youtube_router
 from app.models import HealthResponse
@@ -20,7 +21,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router)
+app.include_router(ingestion_router)
+app.include_router(chat_router)
 app.include_router(instagram_router)
 app.include_router(youtube_router)
 

@@ -95,7 +95,7 @@ export default function VideoCard({ video }: { video: VideoData }) {
       {/* Video Player Embed */}
       <div className="p-4 flex-none border-b border-zinc-100">
         {embedUrl ? (
-          <div className={`relative ${video.video_url.includes("instagram.com") ? "aspect-[9/16] max-h-[380px]" : "aspect-video"} rounded-xl overflow-hidden border border-zinc-200/50 shadow-md group transition-all duration-300 hover:shadow-lg`}>
+          <div className={`relative ${video.video_url.includes("instagram.com") ? "aspect-[9/16] [&::-webkit-scrollbar]:hidden" : "aspect-video"} rounded-xl overflow-hidden border border-zinc-200/50 shadow-md group transition-all duration-300 hover:shadow-lg`}>
             <iframe
               src={embedUrl}
               className="absolute inset-0 w-full h-full border-0 overflow-hidden"
@@ -114,7 +114,7 @@ export default function VideoCard({ video }: { video: VideoData }) {
       </div>
 
       {/* Scrollable Video Info & Stats Section */}
-      <div className="flex-1 p-4 flex flex-col justify-between overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-zinc-200">
+      <div className="flex-1 p-4 flex flex-col justify-between overflow-y-auto space-y-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="space-y-2.5">
           <h3 className="font-bold text-sm text-zinc-800 leading-snug tracking-wide" title={video.title}>
             {video.title}

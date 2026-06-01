@@ -34,7 +34,7 @@ export default function Home() {
       <header className="h-16 border-b border-zinc-200/80 px-6 py-4 bg-white/70 backdrop-blur-md flex items-center justify-between flex-none shadow-sm z-10">
         <div className="flex items-center gap-2">
           <Film className="w-5 h-5 text-blue-600 animate-pulse" />
-          <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-zinc-800 to-zinc-500 bg-clip-text text-transparent">
+          <h1 className="text-lg font-bold tracking-tight bg-linear-to-r from-zinc-800 to-zinc-500 bg-clip-text text-transparent">
             CompiSmart Studio
           </h1>
         </div>
@@ -51,10 +51,10 @@ export default function Home() {
       </header>
 
       {/* Main Workspace Body */}
-      <div className="flex-1 p-6 relative overflow-hidden h-[calc(100vh-4rem)] w-full">
+      <div className="flex-1 relative w-full">
         {isLoading ? (
           /* Three-Column Console Pulsating Loading Skeleton */
-          <div className="w-full h-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden animate-pulse relative">
+          <div className="absolute inset-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden animate-pulse">
             {/* Left Column Skeleton: Video Player A */}
             <div className="lg:col-span-3 h-full border border-zinc-200/80 bg-white rounded-2xl p-4 flex flex-col justify-between overflow-hidden shadow-sm space-y-4">
               <div className="space-y-3 flex-none">
@@ -131,7 +131,7 @@ export default function Home() {
                   </div>
                   <div className="space-y-1.5 mt-2">
                     <h3 className="text-xs font-black text-zinc-800 uppercase tracking-wider">Ingesting Transcripts</h3>
-                    <p className="text-[10px] text-zinc-500 max-w-[240px] leading-relaxed">
+                    <p className="text-[10px] text-zinc-500 max-w-60 leading-relaxed">
                       Downloading video audio, transcribing using AssemblyAI, chunking transcripts, and indexing Pinecone database...
                     </p>
                   </div>
@@ -171,14 +171,14 @@ export default function Home() {
           </div>
         ) : !sessionId ? (
           /* Landing page with Ingestion Form centered */
-          <div className="w-full h-full flex flex-col items-center justify-center relative z-10 max-y-full overflow-y-auto px-4 py-8">
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 overflow-y-auto px-4 py-8">
             <div className="text-center space-y-4 max-w-md mx-auto mb-8 animate-fade-in">
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100/80 text-blue-600 text-[10px] font-black uppercase tracking-widest shadow-[0_2px_10px_rgba(59,130,246,0.05)]">
                 <Sparkles size={11} className="text-blue-500 animate-pulse" />
                 AI Video Studio
               </div>
               <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-zinc-800 leading-tight">
-                Unlock Deeper <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">Video Insights</span>
+                Unlock Deeper <span className="bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">Video Insights</span>
               </h2>
               <p className="text-xs text-zinc-500 max-w-sm mx-auto leading-relaxed font-medium">
                 Ingest any two YouTube videos or Instagram Reels. Instantly extract transcripts, perform semantic database searches, visualize comparative metrics, and chat with your RAG co-pilot.
@@ -190,19 +190,19 @@ export default function Home() {
           </div>
         ) : (
           /* Full Height Three-Column Comparative Console Grid */
-          <div className="w-full h-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden">
+          <div className="absolute inset-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden">
             {/* Left Column: Video A Player & Info */}
-            <div className="lg:col-span-3 h-full overflow-hidden flex flex-col">
+            <div className="lg:col-span-3 h-full overflow-hidden flex flex-col min-h-0">
               {videoA && <VideoCard video={videoA} />}
             </div>
 
             {/* Center Column: AI Co-Pilot Chat System */}
-            <div className="lg:col-span-6 h-full overflow-hidden flex flex-col">
+            <div className="lg:col-span-6 h-full overflow-hidden flex flex-col min-h-0">
               <ChatPanel />
             </div>
 
             {/* Right Column: Video B Player & Info */}
-            <div className="lg:col-span-3 h-full overflow-hidden flex flex-col">
+            <div className="lg:col-span-3 h-full overflow-hidden flex flex-col min-h-0">
               {videoB && <VideoCard video={videoB} />}
             </div>
           </div>
