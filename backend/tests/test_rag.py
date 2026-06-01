@@ -6,12 +6,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from app.services.pinecone.db import get_video
 from app.services.rag.pipeline import chat_stream
 
-VIDEO_B_URL = "https://www.instagram.com/reel/DYsSOk_p0yi/"
 VIDEO_A_URL = "https://www.instagram.com/reel/DYrHdO-OkOM/"
+VIDEO_B_URL = "https://www.instagram.com/reel/DYsSOk_p0yi/"
 
 
-# VIDEO_B_URL = "https://www.youtube.com/watch?v=TLnUJzueBOQ"
-# VIDEO_A_URL = "https://www.youtube.com/watch?v=E991yX1WiEI"
+VIDEO_A_URL = "https://www.youtube.com/watch?v=F0cdbR5ognY"
+VIDEO_B_URL = "https://www.youtube.com/watch?v=3TqGEbROFd4"
+
 
 print("\n=== Ingesting Video A ===")
 result_a = get_video(url=VIDEO_A_URL)

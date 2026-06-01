@@ -62,8 +62,12 @@ def _upsert_records_with_retry(index, namespace: str, records: list):
 def add_video(url: str) -> Dict[str, Any]:
     settings = get_settings()
 
+    print(f"\n[Ingestion Pipeline] Started processing video URL: {url}")
+
     if is_youtube_url(url):
+        print("[Ingestion Pipeline] Detected YouTube URL. Starting scraper...")
         metadata, timestamped = scrape_video_timestamped(url)
+        print("[Ingestion Pipeline] Generating semantic chunk segments...")
         chunks = chunk_text(
             timestamped=timestamped,
             max_chunk_size=settings.max_chunk_size,
@@ -73,7 +77,9 @@ def add_video(url: str) -> Dict[str, Any]:
             metadata=metadata,
         )
     elif REEL_RE.match(url) or POST_RE.match(url):
+        print("[Ingestion Pipeline] Detected Instagram Reel/Post. Starting scraper...")
         metadata, transcript = ig_scrape_video(url)
+        print("[Ingestion Pipeline] Generating semantic chunk segments...")
         chunks = chunk_text(
             text=transcript,
             max_chunk_size=settings.max_chunk_size,
@@ -85,6 +91,7 @@ def add_video(url: str) -> Dict[str, Any]:
     else:
         raise ValueError(f"Unsupported URL: {url}")
 
+    print(f"[Ingestion Pipeline] Formed {len(chunks)} chunks. Sanitizing metadata fields...")
     index = _get_index()
     records = []
     for chunk in chunks:
@@ -92,11 +99,22 @@ def add_video(url: str) -> Dict[str, Any]:
         record.update(_sanitize_metadata(chunk.metadata))
         records.append(record)
     
-    _upsert_records_with_retry(index, namespace=NAMESPACE, records=records[:96])
-    time.sleep(5)
+    print("[Ingestion Pipeline] Uploading chunk segments to Pinecone database...")
+    
+    # Upload first batch
+    batch_1 = records[:96]
+    print(f"  [Pinecone Indexing] Upserting batch 1 ({len(batch_1)} chunks)...")
+    _upsert_records_with_retry(index, namespace=NAMESPACE, records=batch_1)
+    
+    # Upload remaining batches without hardcoded sleep delays to maximize performance speed
+    batch_idx = 2
     for i in range(96, len(records), 96):
-        _upsert_records_with_retry(index, namespace=NAMESPACE, records=records[i:i + 96])
-        time.sleep(5)
+        batch = records[i:i + 96]
+        print(f"  [Pinecone Indexing] Upserting batch {batch_idx} ({len(batch)} chunks)...")
+        _upsert_records_with_retry(index, namespace=NAMESPACE, records=batch)
+        batch_idx += 1
+
+    print(f"[Ingestion Pipeline] Video successfully ingested and indexed: {url}\n")
 
     return {
         "source_url": url,

@@ -97,8 +97,8 @@ def extract_video_fields(meta: dict, chunks_count: int, url: str) -> Dict[str, A
 async def ingest_videos(request: VideoIngestRequest):
     try:
         # 1. Start vector database indexing in a separate thread pool
-        res_a = await asyncio.to_thread(get_video, request.video_a, "A")
-        res_b = await asyncio.to_thread(get_video, request.video_b, "B")
+        res_a = await asyncio.to_thread(get_video, request.video_a)
+        res_b = await asyncio.to_thread(get_video, request.video_b)
         
         # 2. Fetch fresh, structured metadata directly from the scraper functions
         meta_a = await asyncio.to_thread(fetch_clean_metadata, request.video_a)
@@ -205,6 +205,21 @@ async def chat_stream_endpoint(request: ChatRequest):
 
             # Execute Pinecone lookup in executor, filtering strictly by the active video URLs!
             source_urls = [url for url in [video_a_url, video_b_url] if url]
+
+            # Dynamic In-Context Ingestion: If any video is not in the database, index it dynamically!
+            for idx, url in enumerate(source_urls):
+                vid_label = "A" if idx == 0 else "B"
+                res = await loop.run_in_executor(None, lambda u=url: get_video(u))
+                if res.get("status") == "added":
+                    yield {
+                        "event": "message",
+                        "data": json.dumps({
+                            "type": "chunk",
+                            "content": f"🌐 *Video {vid_label} was not found in the vector index. Scraping and indexing transcript right now...*\n"
+                        })
+                    }
+                    await asyncio.sleep(0.5)
+
             chunks = await loop.run_in_executor(
                 None, 
                 lambda: search_pinecone(query=request.message, top_k=settings.top_k, source_urls=source_urls)

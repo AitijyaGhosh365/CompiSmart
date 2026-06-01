@@ -21,19 +21,61 @@ export default function ChatMessageComponent({ message }: { message: ChatMessage
     );
   }
 
+  // Parse out thinking process updates
+  const lines = message.content.split("\n");
+  const thinkingLines: string[] = [];
+  const mainContentLines: string[] = [];
+  
+  let inThinkingPhase = true;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const isThinkingLine = 
+      trimmed.startsWith("🔍") || 
+      trimmed.startsWith("⚡") || 
+      trimmed.startsWith("📚") || 
+      trimmed.startsWith("🤖");
+      
+    if (inThinkingPhase && (isThinkingLine || trimmed === "")) {
+      if (isThinkingLine) {
+        thinkingLines.push(trimmed);
+      }
+    } else {
+      inThinkingPhase = false;
+      mainContentLines.push(line);
+    }
+  }
+  
+  const mainContent = mainContentLines.join("\n").trim();
+
   return (
     <div className="flex justify-start items-start gap-2.5">
       <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm flex-shrink-0 animate-pulse">
         <Sparkles size={14} />
       </div>
       <div className="max-w-[90%] space-y-2">
-        <div className="bg-white border border-zinc-200/80 text-zinc-800 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm">
-          <div className="text-sm prose prose-sm max-w-none leading-relaxed prose-p:my-1 prose-headings:text-zinc-800 prose-strong:text-zinc-900 prose-ul:my-1 prose-li:my-0.5 prose-code:text-blue-600">
-            <ReactMarkdown>
-              {message.content}
-            </ReactMarkdown>
+        {thinkingLines.length > 0 && (
+          <div className="p-3 bg-zinc-50/60 border border-zinc-200/40 border-r-2 border-r-blue-500 rounded-xl shadow-sm space-y-1.5 max-w-md">
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 block">Thinking Process</span>
+            <div className="space-y-1">
+              {thinkingLines.map((line, idx) => (
+                <div key={idx} className="text-xs text-zinc-400 font-medium leading-relaxed prose prose-sm prose-p:my-0 prose-strong:text-zinc-500">
+                  <ReactMarkdown>{line}</ReactMarkdown>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {mainContent && (
+          <div className="bg-white border border-zinc-200/80 text-zinc-800 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm">
+            <div className="text-sm prose prose-sm max-w-none leading-relaxed prose-p:my-1 prose-headings:text-zinc-800 prose-strong:text-zinc-900 prose-ul:my-1 prose-li:my-0.5 prose-code:text-blue-600">
+              <ReactMarkdown>
+                {mainContent}
+              </ReactMarkdown>
+            </div>
+          </div>
+        )}
+
         {message.sources && message.sources.length > 0 && (
           <div className="px-2">
             <button

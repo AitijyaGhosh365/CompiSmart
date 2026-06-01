@@ -95,10 +95,12 @@ export default function VideoCard({ video }: { video: VideoData }) {
       {/* Video Player Embed */}
       <div className="p-4 flex-none border-b border-zinc-100">
         {embedUrl ? (
-          <div className="relative aspect-video rounded-xl overflow-hidden border border-zinc-200/50 shadow-md group transition-all duration-300 hover:shadow-lg">
+          <div className={`relative ${video.video_url.includes("instagram.com") ? "aspect-[9/16] max-h-[380px]" : "aspect-video"} rounded-xl overflow-hidden border border-zinc-200/50 shadow-md group transition-all duration-300 hover:shadow-lg`}>
             <iframe
               src={embedUrl}
-              className="absolute inset-0 w-full h-full"
+              className="absolute inset-0 w-full h-full border-0 overflow-hidden"
+              scrolling="no"
+              style={{ overflow: "hidden" }}
               allowFullScreen
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />

@@ -90,14 +90,32 @@ def get_youtube_metadata(url: str) -> dict:
 
 
 def scrape_video(url: str) -> tuple[dict, str]:
+    print(f"  [Scraper] Fetching YouTube metadata for URL: {url}...")
     metadata = get_youtube_metadata(url)
-    transcript = get_youtube_transcript(url)
+    print(f"  [Scraper] YouTube metadata fetched successfully. Channel: @{metadata.get('creator')}.")
+    
+    print(f"  [Scraper] Fetching YouTube transcript subtitles...")
+    try:
+        transcript = get_youtube_transcript(url)
+        print(f"  [Scraper] YouTube transcript subtitles fetched successfully.")
+    except Exception as e:
+        print(f"  [Scraper] Transcript fetch failed for YouTube URL {url}: {e}. Falling back to placeholder.")
+        transcript = "[No transcript available for this video]"
     return metadata, transcript
 
 
 def scrape_video_timestamped(url: str) -> tuple[dict, list]:
+    print(f"  [Scraper] Fetching YouTube metadata for URL: {url}...")
     metadata = get_youtube_metadata(url)
-    timestamped = get_youtube_transcript_timestamped(url)
+    print(f"  [Scraper] YouTube metadata fetched successfully. Channel: @{metadata.get('creator')}.")
+    
+    print(f"  [Scraper] Fetching YouTube transcript subtitles...")
+    try:
+        timestamped = get_youtube_transcript_timestamped(url)
+        print(f"  [Scraper] YouTube transcript subtitles fetched successfully ({len(timestamped)} segments).")
+    except Exception as e:
+        print(f"  [Scraper] Transcript fetch failed for YouTube URL {url}: {e}. Falling back to placeholder.")
+        timestamped = [{"text": "[No transcript available for this video]", "start": 0.0, "duration": 10.0}]
     return metadata, timestamped
 
 

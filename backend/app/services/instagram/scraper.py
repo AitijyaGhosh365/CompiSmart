@@ -151,18 +151,22 @@ def get_snapshot(snapshot_id: str) -> Dict[str, Any]:
 
 
 def scrape_video(url: str) -> tuple[dict, str]:
-
+    print(f"  [Scraper] Scraping Instagram Reels data for URL: {url}...")
     results = scrape_instagram_reels([url])
 
     if not results:
         raise ValueError(f"No data returned for Instagram URL: {url}")
 
     metadata = results[0]
+    print(f"  [Scraper] Instagram Reels data fetched. Creator: @{metadata.get('creator')}.")
+    
     audio_url = metadata.get("video_url") or metadata.get("audio_url")
+    print(f"  [Scraper] Extracted media audio URL. Initiating AssemblyAI transcription...")
 
-    if not audio_url:
-        raise ValueError(f"No video/audio URL found for Instagram URL: {url}")
-
-    transcript = transcribe_audio(audio_url)
+    try:
+        transcript = transcribe_audio(audio_url)
+        print(f"  [Scraper] AssemblyAI transcribing completed successfully.")
+    except Exception as e:
+        print(f"  [Scraper] AssemblyAI transcription failed for Instagram URL {url}: {e}. Falling back to placeholder.")
+        transcript = "[No transcript available for this video]"
     return metadata, transcript
-

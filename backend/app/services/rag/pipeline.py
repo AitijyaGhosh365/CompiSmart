@@ -31,7 +31,7 @@ def search_pinecone(
                 "namespace": NAMESPACE,
                 "top_k": sub_k,
                 "inputs": {"text": query},
-                "filter": {"source_url": url}  # Exact equality metadata filter
+                "filter": {"source_url": {"$eq": url}}  # Exact equality metadata filter
             }
             try:
                 results = index.search(**search_kwargs)
@@ -117,8 +117,8 @@ def get_all_chunks_by_url(url: str) -> List[Dict[str, Any]]:
     seen_ids = set()
 
     queries = [
-        {"text": "metadata title creator views likes engagement", "filter": {"source_url": url, "chunk_type": "meta"}},
-        {"text": "video transcript speech segment conversation content", "filter": {"source_url": url, "chunk_type": "transcript"}},
+        {"text": "metadata title creator views likes engagement", "filter": {"source_url": {"$eq": url}, "chunk_type": {"$eq": "meta"}}},
+        {"text": "video transcript speech segment conversation content", "filter": {"source_url": {"$eq": url}, "chunk_type": {"$eq": "transcript"}}},
     ]
 
     for q in queries:
@@ -157,8 +157,8 @@ def get_all_chunks(video_id: str) -> List[Dict[str, Any]]:
     seen_ids = set()
 
     queries = [
-        {"text": "metadata title creator views likes engagement", "filter": {"video_id": video_id, "chunk_type": "meta"}},
-        {"text": "video transcript speech segment conversation content", "filter": {"video_id": video_id, "chunk_type": "transcript"}},
+        {"text": "metadata title creator views likes engagement", "filter": {"video_id": video_id, "chunk_type": {"$eq": "meta"}}},
+        {"text": "video transcript speech segment conversation content", "filter": {"video_id": video_id, "chunk_type": {"$eq": "transcript"}}},
     ]
 
     for q in queries:

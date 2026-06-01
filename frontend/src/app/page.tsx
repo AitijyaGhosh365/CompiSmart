@@ -4,7 +4,7 @@ import { useStore } from "@/lib/store";
 import IngestForm from "@/components/IngestForm";
 import VideoCard from "@/components/VideoCard";
 import ChatPanel from "@/components/ChatPanel";
-import { Trash2, Film } from "lucide-react";
+import { Trash2, Film, Sparkles } from "lucide-react";
 
 export default function Home() {
   const { sessionId, videoA, videoB, isLoading } = useStore();
@@ -51,7 +51,7 @@ export default function Home() {
       </header>
 
       {/* Main Workspace Body */}
-      <div className="flex-1 p-6 relative overflow-hidden h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="flex-1 p-6 relative overflow-hidden h-[calc(100vh-4rem)] w-full">
         {isLoading ? (
           /* Three-Column Console Pulsating Loading Skeleton */
           <div className="w-full h-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden animate-pulse relative">
@@ -170,9 +170,23 @@ export default function Home() {
             </div>
           </div>
         ) : !sessionId ? (
-          /* Landing page with Ingestion Form */
-          <div className="w-full max-w-md mx-auto py-12 relative z-10">
-            <IngestForm />
+          /* Landing page with Ingestion Form centered */
+          <div className="w-full h-full flex flex-col items-center justify-center relative z-10 max-y-full overflow-y-auto px-4 py-8">
+            <div className="text-center space-y-4 max-w-md mx-auto mb-8 animate-fade-in">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100/80 text-blue-600 text-[10px] font-black uppercase tracking-widest shadow-[0_2px_10px_rgba(59,130,246,0.05)]">
+                <Sparkles size={11} className="text-blue-500 animate-pulse" />
+                AI Video Studio
+              </div>
+              <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-zinc-800 leading-tight">
+                Unlock Deeper <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">Video Insights</span>
+              </h2>
+              <p className="text-xs text-zinc-500 max-w-sm mx-auto leading-relaxed font-medium">
+                Ingest any two YouTube videos or Instagram Reels. Instantly extract transcripts, perform semantic database searches, visualize comparative metrics, and chat with your RAG co-pilot.
+              </p>
+            </div>
+            <div className="w-full max-w-md mx-auto shadow-2xl rounded-3xl">
+              <IngestForm />
+            </div>
           </div>
         ) : (
           /* Full Height Three-Column Comparative Console Grid */
