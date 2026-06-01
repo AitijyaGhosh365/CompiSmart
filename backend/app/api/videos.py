@@ -104,8 +104,20 @@ async def ingest_videos(request: VideoIngestRequest):
         meta_a = await asyncio.to_thread(fetch_clean_metadata, request.video_a)
         meta_b = await asyncio.to_thread(fetch_clean_metadata, request.video_b)
         
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=f"Validation Error: {str(ve)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to ingest videos: {str(e)}")
+        error_msg = str(e)
+        # Handle truncated/incomplete YouTube ID or invalid URLs gracefully
+        if "truncated" in error_msg.lower() or "incomplete" in error_msg.lower() or "youtube:" in error_msg.lower():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid or truncated URL provided: {error_msg}"
+            )
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to ingest video metadata: {error_msg}"
+        )
 
     # Robustly parse chunks_a and chunks_b to ensure they are always valid integers (never None)
     def parse_chunks(res) -> int:
@@ -129,7 +141,12 @@ async def ingest_videos(request: VideoIngestRequest):
     video_b_data = VideoData(id="B", **fields_b)
 
     session_id = str(uuid.uuid4())
-    session_histories[session_id] = []
+    session_histories[session_id] = {
+        "history": [],
+        "video_a_url": request.video_a,
+        "video_b_url": request.video_b
+    }
+
 
     return VideoIngestResponse(
         session_id=session_id,
@@ -141,7 +158,15 @@ async def ingest_videos(request: VideoIngestRequest):
 
 @router.post("/chat/stream")
 async def chat_stream_endpoint(request: ChatRequest):
-    history = session_histories.get(request.session_id, [])
+    session_data = session_histories.get(request.session_id, {})
+    if isinstance(session_data, dict):
+        history = session_data.get("history", [])
+        video_a_url = session_data.get("video_a_url", "")
+        video_b_url = session_data.get("video_b_url", "")
+    else:
+        history = []
+        video_a_url = ""
+        video_b_url = ""
 
     # Safe iterator chunk getter to prevent asyncio StopIteration Future crashes
     def get_next_chunk(it):
@@ -167,7 +192,7 @@ async def chat_stream_endpoint(request: ChatRequest):
 
             from app.services.rag.pipeline import (
                 search_pinecone,
-                get_all_chunks,
+                get_all_chunks_by_url,
                 format_context,
                 SYSTEM_PROMPT,
                 _extract_text
@@ -178,10 +203,11 @@ async def chat_stream_endpoint(request: ChatRequest):
 
             settings = get_settings()
 
-            # Execute Pinecone lookup in executor
+            # Execute Pinecone lookup in executor, filtering strictly by the active video URLs!
+            source_urls = [url for url in [video_a_url, video_b_url] if url]
             chunks = await loop.run_in_executor(
                 None, 
-                lambda: search_pinecone(query=request.message, top_k=settings.top_k)
+                lambda: search_pinecone(query=request.message, top_k=settings.top_k, source_urls=source_urls)
             )
 
             # Step 2: Report Matches Found
@@ -198,8 +224,8 @@ async def chat_stream_endpoint(request: ChatRequest):
             def compile_extra_chunks():
                 extra_c = []
                 seen_ids = {c["id"] for c in chunks}
-                for vid in ["A", "B"]:
-                    vid_chunks = get_all_chunks(vid)
+                for url in source_urls:
+                    vid_chunks = get_all_chunks_by_url(url)
                     for c in vid_chunks:
                         if c["id"] not in seen_ids:
                             seen_ids.add(c["id"])
@@ -208,6 +234,14 @@ async def chat_stream_endpoint(request: ChatRequest):
 
             extra_chunks = await loop.run_in_executor(None, compile_extra_chunks)
             total_loaded = len(chunks) + len(extra_chunks)
+
+            # Dynamically map the retrieved chunks' video_id in-memory to A or B based on their URL
+            # This completely avoids any old cached video_id slot mappings in the database!
+            for c in chunks + extra_chunks:
+                if c.get("source_url") == video_a_url:
+                    c["video_id"] = "A"
+                elif c.get("source_url") == video_b_url:
+                    c["video_id"] = "B"
 
             # Step 3: Report Context Compiled
             yield {
@@ -250,7 +284,19 @@ async def chat_stream_endpoint(request: ChatRequest):
             messages_history.append(HumanMessage(content=request.message))
 
             full_chunks = chunks + extra_chunks
-            context = format_context(full_chunks)
+            
+            # Segregated RAG Context Formatting to prevent LLM slot confusion
+            context_parts = []
+            if source_urls and len(source_urls) >= 2:
+                for idx, url in enumerate(source_urls):
+                    vid_label = "A" if idx == 0 else "B"
+                    url_chunks = [c for c in full_chunks if c.get("source_url") == url]
+                    formatted = format_context(url_chunks)
+                    context_parts.append(f"=== CONTEXT FOR VIDEO {vid_label} (URL: {url}) ===\n{formatted}")
+                context = "\n\n".join(context_parts)
+            else:
+                context = format_context(full_chunks)
+
             system_msg = SystemMessage(content=f"{SYSTEM_PROMPT}\n\nContext:\n{context}")
 
             llm = ChatGoogleGenerativeAI(
@@ -278,7 +324,16 @@ async def chat_stream_endpoint(request: ChatRequest):
         full_response = "".join(response_chunks)
         history.append({"role": "user", "content": request.message})
         history.append({"role": "assistant", "content": full_response})
-        session_histories[request.session_id] = history
+        
+        # Save session histories correctly with history, video_a_url and video_b_url
+        if isinstance(session_histories.get(request.session_id), dict):
+            session_histories[request.session_id]["history"] = history
+        else:
+            session_histories[request.session_id] = {
+                "history": history,
+                "video_a_url": video_a_url,
+                "video_b_url": video_b_url
+            }
 
         yield {"event": "message", "data": json.dumps({"type": "done"})}
 

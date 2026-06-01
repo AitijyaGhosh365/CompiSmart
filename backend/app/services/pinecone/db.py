@@ -6,6 +6,7 @@ from app.config import get_settings
 from app.services.pinecone.chunk_generation import chunk_text
 from app.services.youtube.scraper import is_youtube_url, scrape_video_timestamped
 from app.services.instagram.scraper import scrape_video as ig_scrape_video, REEL_RE, POST_RE
+import inspect
 
 NAMESPACE = "video_data"
 
@@ -13,8 +14,11 @@ NAMESPACE = "video_data"
 def _get_index():
     settings = get_settings()
     pc = Pinecone(api_key=settings.pinecone_api_key)
-    return pc.Index(settings.pinecone_index_name)
+    index = pc.Index(settings.pinecone_index_name)
 
+    # print(inspect.signature(index.search))
+
+    return index
 
 def _url_to_source_id(url: str) -> str:
     return re.sub(r'[^a-zA-Z0-9]', '_', url).strip('_')
@@ -38,87 +42,6 @@ def _sanitize_metadata(meta: Dict[str, Any]) -> Dict[str, Any]:
     return clean
 
 
-def clear_namespace() -> int:
-    """Delete all records in the namespace. Returns count deleted."""
-    index = _get_index()
-    all_ids = set()
-    page = 0
-    while True:
-        try:
-            result = index.search(
-                namespace=NAMESPACE,
-                top_k=100,
-                inputs={"text": f"_page_{page}"},
-            )
-            hits = result.result.hits if hasattr(result, 'result') and hasattr(result.result, 'hits') else []
-            if not hits:
-                break
-            for hit in hits:
-                hit_id = getattr(hit, "id", None) or getattr(hit, "id_", None) or (hit.get("id_") or hit.get("id") or hit.get("_id") if isinstance(hit, dict) else None)
-                if hit_id:
-                    all_ids.add(hit_id)
-            page += 1
-            if len(hits) < 100:
-                break
-        except Exception:
-            break
-
-    if all_ids:
-        ids = list(all_ids)
-        for i in range(0, len(ids), 100):
-            index.delete(ids=ids[i:i + 100], namespace=NAMESPACE)
-    return len(all_ids)
-
-
-def delete_video(video_id: str) -> int:
-    """Delete all chunks for a given video_id from Pinecone."""
-    index = _get_index()
-    deleted_count = 0
-    
-    while True:
-        all_ids = set()
-        try:
-            result = index.search(
-                namespace=NAMESPACE,
-                top_k=100,
-                inputs={"text": video_id},
-                filter={"video_id": video_id},
-            )
-            hits = result.result.hits if hasattr(result, 'result') and hasattr(result.result, 'hits') else []
-            for hit in hits:
-                hit_id = getattr(hit, "id", None) or getattr(hit, "id_", None) or (hit.get("id_") or hit.get("id") or hit.get("_id") if isinstance(hit, dict) else None)
-                if hit_id:
-                    all_ids.add(hit_id)
-        except Exception:
-            pass
-
-        try:
-            result2 = index.search(
-                namespace=NAMESPACE,
-                top_k=100,
-                inputs={"text": "meta"},
-                filter={"video_id": video_id, "chunk_type": "meta"},
-            )
-            hits2 = result2.result.hits if hasattr(result2, 'result') and hasattr(result2.result, 'hits') else []
-            for hit in hits2:
-                hit_id = getattr(hit, "id", None) or getattr(hit, "id_", None) or (hit.get("id_") or hit.get("id") or hit.get("_id") if isinstance(hit, dict) else None)
-                if hit_id:
-                    all_ids.add(hit_id)
-        except Exception:
-            pass
-
-        if not all_ids:
-            break
-            
-        ids = list(all_ids)
-        for i in range(0, len(ids), 100):
-            index.delete(ids=ids[i:i + 100], namespace=NAMESPACE)
-        deleted_count += len(all_ids)
-        time.sleep(1)
-        
-    return deleted_count
-
-
 def _upsert_records_with_retry(index, namespace: str, records: list):
     max_retries = 5
     backoff = 15.0
@@ -136,7 +59,7 @@ def _upsert_records_with_retry(index, namespace: str, records: list):
     index.upsert_records(namespace=namespace, records=records)
 
 
-def add_video(url: str, video_id: str) -> Dict[str, Any]:
+def add_video(url: str) -> Dict[str, Any]:
     settings = get_settings()
 
     if is_youtube_url(url):
@@ -145,7 +68,6 @@ def add_video(url: str, video_id: str) -> Dict[str, Any]:
             timestamped=timestamped,
             max_chunk_size=settings.max_chunk_size,
             overlap=settings.chunk_overlap,
-            video_id=video_id,
             source_url=url,
             creator=metadata.get("creator", ""),
             metadata=metadata,
@@ -156,7 +78,6 @@ def add_video(url: str, video_id: str) -> Dict[str, Any]:
             text=transcript,
             max_chunk_size=settings.max_chunk_size,
             overlap=settings.chunk_overlap,
-            video_id=video_id,
             source_url=url,
             creator=metadata.get("creator", ""),
             metadata=metadata,
@@ -179,40 +100,47 @@ def add_video(url: str, video_id: str) -> Dict[str, Any]:
 
     return {
         "source_url": url,
-        "video_id": video_id,
         "metadata": metadata,
         "chunks_upserted": len(chunks),
     }
 
 
-def get_video(url: str, video_id: str = "", force_refresh: bool = False) -> Dict[str, Any]:
-    """Check if video exists in Pinecone. If not (or force_refresh), add it. Return video data."""
-    source_id = _url_to_source_id(url)
-    meta_id = f"{source_id}#meta"
+def get_video(
+    url: str,
+    force_refresh: bool = False
+) -> Dict[str, Any]:
+
     index = _get_index()
 
     if not force_refresh:
         try:
-            result = index.fetch(ids=[meta_id], namespace=NAMESPACE)
-            if result.get("vectors"):
-                vector = result["vectors"][meta_id]
-                stored_metadata = vector.get("metadata", {})
+            result = index.search(
+                namespace=NAMESPACE,
+                top_k=1,
+                inputs={"text": "video"},
+                filter={
+                    "source_url": {"$eq": url}
+                }
+            )
+
+            # print("SEARCH RESULT:", result)
+
+            hits = result.get("result", {}).get("hits", [])
+
+            if hits:
+                metadata = hits[0].get("fields", {})
+
                 return {
                     "source_url": url,
-                    "video_id": stored_metadata.get("video_id", ""),
                     "status": "exists",
-                    "meta_id": meta_id,
-                    "stored_metadata": stored_metadata,
+                    "stored_metadata": metadata,
                 }
-        except Exception:
-            pass
 
-    if not video_id:
-        raise ValueError("video_id is required when adding a new video")
+        except Exception as e:
+            print(f"Search failed: {e}")
 
-    if force_refresh:
-        delete_video(video_id)
 
-    result = add_video(url, video_id)
+    result = add_video(url)
     result["status"] = "added"
+
     return result

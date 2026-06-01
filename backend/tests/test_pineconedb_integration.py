@@ -7,7 +7,7 @@ from app.services.pinecone.db import get_video
 YT_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 print("=== Testing get_video ===")
-result = get_video(url=YT_URL, video_id="A")
+result = get_video(url=YT_URL)
 print(f"Status: {result['status']}")
 print(f"Video ID: {result.get('video_id', 'N/A')}")
 
