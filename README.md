@@ -104,7 +104,9 @@ URL → YouTube API / Bright Data → metadata + transcript
 ## Bugs and Issue I have encountered
 
 - **YouTube player not rendering** — some videos show "No player available" due to YouTube embed restrictions or URL format differences.
-- **Bright Data empty responses** — twice received empty data from Bright Data. Could not reproduce consistently, likely a transient rate-limit issue.
+- **Bright Data empty responses for instagram** — thrice received empty data from Bright Data especially in case of instagram scraping. Could not reproduce consistently, likely a transient rate-limit issue.
+- **Bright Data empty responses for youtube** — Sometimes when two new videos are scrapped with bright data it could not find the transcript or just does not return anything. Could not reproduce consistently, likely a transient rate-limit issue.
+
 
 ## Things I would like to change
 
