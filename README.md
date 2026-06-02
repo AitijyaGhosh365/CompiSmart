@@ -56,7 +56,6 @@ npm run dev
 | `PINECONE_API_KEY` | [Pinecone](https://pinecone.io) | Vector database |
 | `PINECONE_INDEX_NAME` | Pinecone | Index name (e.g. `compistart`) |
 | `YOUTUBE_API_KEY` | [Google Cloud Console](https://console.cloud.google.com) | YouTube Data API v3 |
-| `NEXT_PUBLIC_API_URL` | [Backend link in .env.local] | Used for frontend to backend connection |
 
 There are other variable in .env.example which were used in earlier implementation but are not used anymore one can leave it empty
 
@@ -73,17 +72,19 @@ There are other variable in .env.example which were used in earlier implementati
 
 ## Deployment
 
+How I have deployed the project :
+
 ```bash
 # Build & push to GCP Artifact Registry
-docker build -t asia-south1-docker.pkg.dev/PROJECT/compismart-backend/api:latest .
-docker push asia-south1-docker.pkg.dev/PROJECT/compismart-backend/api:latest
+docker build -t compismart-backend:latest .
+docker tag compismart-backend:latest REGISTRY/PROJECT/compismart-backend:latest
+docker push REGISTRY/PROJECT/compismart-backend:latest
 
-# Deploy to Cloud Run
-gcloud run deploy compismart-api --image asia-south1-docker.pkg.dev/PROJECT/compismart-backend/api:latest \
-  --region asia-south1 --allow-unauthenticated --set-env-vars "KEY1=...,KEY2=..."
+gcloud run deploy compismart-api --image REGISTRY/PROJECT/compismart-backend:latest \
+  --region REGION --allow-unauthenticated --set-env-vars "KEY1=...,KEY2=..."
 ```
 
-Frontend: deploy on [Vercel](https://vercel.com) with `NEXT_PUBLIC_API_URL` set to the Cloud Run URL.
+Frontend: deployed on [Vercel](https://vercel.com) with `NEXT_PUBLIC_API_URL` set to the Cloud Run URL.
 
 ## How It Works
 
@@ -95,4 +96,19 @@ URL → YouTube API / Bright Data → metadata + transcript
 
 ## Limitations
 
-<!-- Add project limitations here -->
+- **Pinecone free tier token limit** — `llama-text-embed-v2` caps at 250K tokens/min. Combined video duration should not exceed ~10 minutes to stay within limits.
+- **Chunk size** — max 500 chars per chunk. Longer sentences get split, which can fragment semantic meaning. Smaller chunks also mean more Pinecone API calls per video.
+- **Bright Data rate limit** — the ingestion pipeline makes separate Bright Data calls for metadata and transcript. With 2 videos, this can hit rate limits causing empty responses.
+- **AssemblyAI latency** — Instagram reel transcription takes 10-30 seconds per video. The API polls until transcription completes.
+
+## Bugs and Issue I have encountered
+
+- **YouTube player not rendering** — some videos show "No player available" due to YouTube embed restrictions or URL format differences.
+- **Bright Data empty responses** — twice received empty data from Bright Data. Could not reproduce consistently, likely a transient rate-limit issue.
+
+## Things I would like to change
+
+- **Use yt-dlp + proxy** — current Bright Data transcript is slow. yt-dlp with a residential proxy would be faster, but datacenter IPs (GCP) are blocked by YouTube.
+- **Persistent session auth** — add user authentication for saving and resuming analysis sessions across visits.
+- **Increase chunk size** — modern LLMs support large context windows (Gemini: 1M tokens). Bump chunks from 250 to 1000+ chars for better semantic coherence and fewer Pinecone calls.
+- **Skip metadata upsert** — views/likes/comments change constantly. Fetching fresh metadata every time makes storing it in Pinecone redundant. Only index transcript chunks.
