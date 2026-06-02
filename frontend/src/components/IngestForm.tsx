@@ -55,7 +55,7 @@ export default function IngestForm() {
   const platformB = getPlatform(videoB);
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
+    <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-5 sm:space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
         <h3 className="text-base font-bold text-slate-800">Compare Two Videos</h3>
