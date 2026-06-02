@@ -39,7 +39,7 @@ export default function VideoCard({ video }: { video: VideoData }) {
   const offset = circumference - (Math.min(video.engagement_rate || 0, 15) / 15) * circumference;
 
   return (
-    <div className={`flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm ${isA ? "hover:shadow-md hover:border-blue-200" : "hover:shadow-md hover:border-violet-200"} transition-all duration-300`}>
+    <div className={`flex flex-col bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm ${isA ? "hover:shadow-md hover:border-blue-200" : "hover:shadow-md hover:border-violet-200"} transition-all duration-300`}>
       {/* Header */}
       <div className="p-4 flex items-center justify-between flex-none border-b border-slate-100 bg-slate-50/50">
         <div className="flex items-center gap-3 min-w-0">
@@ -108,7 +108,7 @@ export default function VideoCard({ video }: { video: VideoData }) {
       </div>
 
       {/* Info & Stats */}
-      <div className="flex-1 p-4 pt-0 overflow-y-auto scrollbar-hide space-y-3">
+      <div className="p-4 pt-0 space-y-3">
         <div className="space-y-1.5">
           <h3 className="font-bold text-sm text-slate-800 leading-snug line-clamp-2" title={video.title}>
             {video.title}

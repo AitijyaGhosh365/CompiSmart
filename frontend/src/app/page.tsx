@@ -210,13 +210,13 @@ function Console() {
 
       {/* Desktop: 3-column grid */}
       <div className="hidden lg:grid lg:grid-cols-12 gap-4 sm:gap-5 p-4 sm:p-6 h-full">
-        <div className="lg:col-span-3 min-h-0 overflow-hidden">
+        <div className="lg:col-span-3 min-h-0 overflow-y-auto scrollbar-thin">
           {videoA && <VideoCard video={videoA} />}
         </div>
         <div className="lg:col-span-6 min-h-0 overflow-hidden flex flex-col">
           <ChatPanel />
         </div>
-        <div className="lg:col-span-3 min-h-0 overflow-hidden">
+        <div className="lg:col-span-3 min-h-0 overflow-y-auto scrollbar-thin">
           {videoB && <VideoCard video={videoB} />}
         </div>
       </div>
@@ -224,7 +224,7 @@ function Console() {
       {/* Mobile: single column via tab */}
       <div className="lg:hidden flex-1 min-h-0 overflow-hidden">
         {tab === "a" && videoA && (
-          <div className="h-full overflow-y-auto scrollbar-hide">
+          <div className="h-full overflow-y-auto scrollbar-thin">
             <VideoCard video={videoA} />
           </div>
         )}
@@ -232,7 +232,7 @@ function Console() {
           <ChatPanel />
         )}
         {tab === "b" && videoB && (
-          <div className="h-full overflow-y-auto scrollbar-hide">
+          <div className="h-full overflow-y-auto scrollbar-thin">
             <VideoCard video={videoB} />
           </div>
         )}
